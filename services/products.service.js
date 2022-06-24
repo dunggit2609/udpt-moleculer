@@ -1,81 +1,79 @@
-"use strict";
+'use strict';
 
-const DbService = require("moleculer-db");
+const DbService = require('moleculer-db');
 
-const getPagingData = require("../helpers/pagingData");
-var apiResponse = require("../helpers/apiResponse");
-const MongoDBAdapter = require("moleculer-db-adapter-mongo");
-const { ObjectID } = require("bson");
-
+const getPagingData = require('../helpers/pagingData');
+var apiResponse = require('../helpers/apiResponse');
+const MongoDBAdapter = require('moleculer-db-adapter-mongo');
+const { ObjectID } = require('bson');
 
 module.exports = {
-  name: "products",
-  mixins: [DbService],
-  adapter: new MongoDBAdapter(
-    "mongodb+srv://admin1:123@cluster0.msdkr.mongodb.net/Product?retryWrites=true&w=majority",
-    { useUnifiedTopology: true }
-  ),
-  collection: "Product",
-  /**
+	name: 'products',
+	mixins: [ DbService ],
+	adapter: new MongoDBAdapter(
+		'mongodb+srv://thangbach:123@cluster0.msdkr.mongodb.net/Product?retryWrites=true&w=majority',
+		{ useUnifiedTopology: true }
+	),
+	collection: 'Product',
+	/**
    * Service settings
    */
-  settings: {
-    fields: [],
-  },
+	settings: {
+		fields: []
+	},
 
-  /**
+	/**
    * Service metadata
    */
-  metadata: {},
+	metadata: {},
 
-  /**
+	/**
    * Service dependencies
    */
-  //dependencies: [],
+	//dependencies: [],
 
-  /**
+	/**
    * Actions
    */
-  actions: {
-   
-    get: {
-      async handler(ctx) {
-        let data = await this.getById(new ObjectID(ctx.params.id));
-        data = JSON.parse(JSON.stringify(data));
-        if (data) {
-          return apiResponse.successResponseWithData("success", data);
-        }
+	actions: {
+		get: {
+			async handler(ctx) {
+				let data = await this.getById(new ObjectID(ctx.params.id));
+				data = JSON.parse(JSON.stringify(data));
+				if (data) {
+					return apiResponse.successResponseWithData('success', data);
+				}
 
-        return apiResponse.badRequestResponse("Not exists");
-      },
-    },
-    getAll: {
-      async handler(ctx) {},
-    },
-  },
+				return apiResponse.badRequestResponse('Not exists');
+			}
+		},
+		getAll: {
+			async handler(ctx) {}
+		}
+	},
 
-  /**
+	/**
    * Events
    */
-  events: {},
+	events: {},
 
-  /**
+	/**
    * Methods
    */
-  methods: {},
+	methods: {},
 
-  /**
+	/**
    * Service created lifecycle event handler
    */
-  created() {},
+	created() {},
 
-  /**
+	/**
    * Service started lifecycle event handler
    */
-  started() {},
+	started() {},
 
-  /**
+	/**
    * Service stopped lifecycle event handler
    */
-  stopped() {},
+	stopped() {}
 };
