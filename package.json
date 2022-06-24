@@ -1,0 +1,36 @@
+{
+  "name": "moleculer-demo",
+  "version": "1.0.0",
+  "description": "My Moleculer project",
+  "scripts": {
+    "dev": "moleculer-runner --repl --hot services",
+    "start": "moleculer-runner services",
+    "lint": "eslint services"
+  },
+  "keywords": [
+    "microservices",
+    "moleculer"
+  ],
+  "author": "",
+  "devDependencies": {
+    "eslint": "^4.15.0",
+    "moleculer-repl": "^0.3.0"
+  },
+  "dependencies": {
+    "bcrypt": "^5.0.1",
+    "jsonwebtoken": "^8.5.1",
+    "jwt-decode": "^3.1.2",
+    "moleculer": "^0.11.0",
+    "moleculer-db": "^0.8.18",
+    "moleculer-db-adapter-mongo": "^0.4.14",
+    "moleculer-db-adapter-mongoose": "^0.8.13",
+    "moleculer-web": "^0.6.0",
+    "mongodb": "^4.5.0",
+    "mongoose": "^6.3.0",
+    "mysql2": "^2.3.3",
+    "sequelize": "^6.20.1"
+  },
+  "engines": {
+    "node": ">= 6.x.x"
+  }
+}
