@@ -53,7 +53,7 @@ module.exports = {
 		getByUserId: {
 			async handler(ctx) {
 				let data = await this.adapter.find({ query: { user_id: new ObjectID(ctx.params.id) } });
-
+				console.log(data);
 				if (data && data.length > 0) {
 					return ctx.params.internal ? data[0] : apiResponse.successResponseWithData('success', data[0]);
 				}
@@ -102,14 +102,20 @@ module.exports = {
 
 		update: {
 			async handler(ctx) {
+				const shop_id = ctx.meta.user.user_id;
+				console.log('shop_id: ', shop_id);
 				try {
+					const shop = await this.adapter.find({ query: { _id: new ObjectID(shop_id) } });
+					console.log(shop);
 					let { _id, ...updateShop } = ctx.params;
 					console.log(updateShop);
-					let shop = await this.adapter.find({ query: { _id: new ObjectID(_id) } });
-					console.log(shop);
+
 					let result = await this.adapter.updateById(_id, { $set: updateShop }, { new: true });
 					console.log('result: ', result);
-					return apiResponse.successResponseWithData('successfully update a shop', result);
+					if (result) {
+						return apiResponse.successResponseWithData('successfully update a shop', result);
+					}
+					return apiResponse.ErrorResponse('Cannot update a shop');
 				} catch (err) {
 					return apiResponse.badRequestResponse('Cannot update a shop');
 				}

@@ -123,6 +123,7 @@ module.exports = {
 		updateHealth: {
 			async handler(ctx) {
 				const shipper_id = ctx.meta.user.user_id;
+				console.log('shipper_id: ', shipper_id);
 				const payload = ctx.params;
 				try {
 					const shipper = await this.getById(new ObjectID(shipper_id));

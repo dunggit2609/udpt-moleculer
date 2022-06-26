@@ -148,7 +148,7 @@ module.exports = {
 							};
 
 							createShopSuccess = await ctx.call('shops.create', newShop);
-
+							console.log('createShopSuccess: ', createShopSuccess);
 							userData.user_id = createShopSuccess._id;
 
 							break;
@@ -217,7 +217,7 @@ module.exports = {
 								break;
 
 							case USER_ROLE_SHOP:
-								shop = await ctx.call('shops.getByUserId', {
+								let shop = await ctx.call('shops.getByUserId', {
 									id: user._id,
 									internal: true
 								});
