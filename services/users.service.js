@@ -217,10 +217,11 @@ module.exports = {
 
             switch (user.role) {
               case USER_ROLE_CUSTOMER:
-                let customer = ctx.call("customers.getByUserId", {
+                let customer = await ctx.call("customers.getByUserId", {
                   id: user._id,
                   internal: true,
                 });
+
                 userData.user_id = customer._id;
                 break;
               case USER_ROLE_SHIPPER:
