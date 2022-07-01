@@ -48,6 +48,7 @@ module.exports = {
   actions: {
     register: {
       async handler(ctx) {
+        const payload = JSON.parse(Object.keys(ctx.params)[0])
         const {
           username,
           password,
@@ -64,7 +65,7 @@ module.exports = {
           location,
           business_cert,
           description,
-        } = ctx.params;
+        } = payload;
         try {
           const existedUsername = await this.adapter.find({
             query: { username: username },
@@ -189,7 +190,8 @@ module.exports = {
     },
     login: {
       async handler(ctx) {
-        const { username, password } = ctx.params;
+        const payload = JSON.parse(Object.keys(ctx.params)[0])
+				const { username, password } = payload;
 
         if (!username || !password) {
           return apiResponse.badRequestResponse(

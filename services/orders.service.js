@@ -7,6 +7,7 @@ var apiResponse = require("../helpers/apiResponse");
 const MongoDBAdapter = require("moleculer-db-adapter-mongo");
 const { ObjectID } = require("bson");
 const { USER_ROLE_SHIPPER } = require("../constant");
+const { MoleculerError } = require("moleculer").Errors;
 
 module.exports = {
   name: "orders",
@@ -97,13 +98,12 @@ module.exports = {
     updateStatus: {
       async handler(ctx) {
         try {
-          
           if (!ctx.meta.user) {
-            return "Unauthorized"
+            return new MoleculerError("Unauthorized", 401);
+
           }
 
           const { order_id, status } = ctx.params;
-
 
           const { role, user_id } = ctx.meta.user;
 

@@ -43,6 +43,11 @@ module.exports = {
 				}
 			},
 
+			bodyParsers: {
+				json: true,
+				urlencoded: { extended: true }
+			}
+
 		}],
 		
 
