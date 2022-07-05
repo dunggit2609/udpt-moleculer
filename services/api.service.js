@@ -51,6 +51,11 @@ module.exports = {
             return "Unauthorized";
           }
         },
+
+        bodyParsers: {
+          json: true,
+          urlencoded: { extended: true },
+        },
       },
     ],
   },
