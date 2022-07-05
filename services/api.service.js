@@ -30,9 +30,6 @@ module.exports = {
           'POST /orders/getAllByShipper': 'orders.getAllByShipper',
           'POST /orders/update-status': 'orders.updateStatus',
 
-          'POST /shop/create': 'shops.create',
-          'PUT /shop/update': 'shops.update',
-
           'GET /reviews/:productID': 'reviews.getByProductID',
           'POST /reviews/': 'reviews.create',
         },
@@ -47,6 +44,11 @@ module.exports = {
           } else {
             return 'Unauthorized';
           }
+        },
+
+        bodyParsers: {
+          json: true,
+          urlencoded: { extended: true },
         },
       },
     ],
