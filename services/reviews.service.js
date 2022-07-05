@@ -8,29 +8,25 @@ const MongoDBAdapter = require('moleculer-db-adapter-mongo');
 const { ObjectID } = require('bson');
 
 module.exports = {
-  name: 'customers',
+  name: 'reviews',
   mixins: [DbService],
   adapter: new MongoDBAdapter(
-    'mongodb+srv://anpha:123@cluster0.msdkr.mongodb.net/Customer?retryWrites=true&w=majority',
+    'mongodb+srv://anpha:123@cluster0.msdkr.mongodb.net/Review?retryWrites=true&w=majority',
     { useUnifiedTopology: true }
   ),
-  collection: 'Customer',
+  collection: 'Review',
   /**
    * Service settings
    */
   settings: {
     fields: [
       '_id',
-      'full_name',
-      'address',
-      'identity',
-      'bank_account',
-      'area_zone',
-      'email',
-      'phone',
-      'user_id',
-      'created_at',
-      'updated_at',
+      'author',
+      'rate',
+      'content',
+      'productID',
+      'create_at',
+      'update_at',
     ],
   },
 
@@ -48,50 +44,35 @@ module.exports = {
    * Actions
    */
   actions: {
-    getByUserId: {
+    getByProductID: {
       async handler(ctx) {
         let data = await this.adapter.find({
-          query: { user_id: new ObjectID(ctx.params.id) },
+          query: { productID: ctx.params.productID },
         });
 
-        if (data && data.length > 0) {
-          return ctx.params.internal
-            ? data[0]
-            : apiResponse.successResponseWithData('success', data[0]);
-        }
-
-        return apiResponse.badRequestResponse('Not exists');
-      },
-    },
-    getAll: {
-      async handler(ctx) {},
-    },
-    getInfo: {
-      async handler(ctx) {
-        let data = await this.getById(new ObjectID(ctx.meta.user.user_id));
-
-        if (data) {
-          return apiResponse.successResponseWithData('success', data);
-        }
-
-        return apiResponse.badRequestResponse('Not exists');
+        return apiResponse.successResponseWithData('success', data);
       },
     },
     create: {
       async handler(ctx) {
-        let newCustomer = ctx.params;
-        let userPayload = {
-          ...newCustomer,
+        const { content, rate, productID } = ctx.params;
+        const user_id = ctx.meta.user.user_id;
+        let newReview = {
           _id: new ObjectID(),
+          content: content,
+          rate: rate,
+          productID: productID,
+          author: user_id,
           created_at: new Date(),
           updated_at: new Date(),
         };
-        const customer = await this.adapter.insert(userPayload);
-        if (!customer) {
+
+        const review = await this.adapter.insert(newReview);
+        if (!review) {
           return apiResponse.ErrorResponse('Created Failed');
         }
 
-        return apiResponse.successResponseWithData('success', customer);
+        return apiResponse.successResponseWithData('success', review);
       },
     },
   },
