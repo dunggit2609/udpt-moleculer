@@ -12,6 +12,7 @@ const {
   USER_ROLE_CUSTOMER,
   USER_ROLE_SHIPPER,
   USER_ROLE_SHOP,
+  ADMIN,
 } = require("../constant");
 
 const access_token_secret = "!@$#^%&*AzQ,PI)o(";
@@ -48,7 +49,8 @@ module.exports = {
   actions: {
     register: {
       async handler(ctx) {
-        const payload = JSON.parse(Object.keys(ctx.params)[0])
+        console.log(JSON.parse(Object.keys(ctx.params)[0]));
+        const payload = JSON.parse(Object.keys(ctx.params)[0]);
         const {
           username,
           password,
@@ -190,8 +192,13 @@ module.exports = {
     },
     login: {
       async handler(ctx) {
-        const payload = JSON.parse(Object.keys(ctx.params)[0])
-				const { username, password } = payload;
+        let payload;
+        try {
+          payload = JSON.parse(Object.keys(ctx.params)[0]);
+        } catch (error) {
+          payload = ctx.params;
+        }
+        const { username, password } = payload;
 
         if (!username || !password) {
           return apiResponse.badRequestResponse(
@@ -244,6 +251,10 @@ module.exports = {
                 userData.user_id = shop._id;
 
                 break;
+              case ADMIN:
+                userData.user_id = user._id;
+                break;
+
               default:
                 break;
             }

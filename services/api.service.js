@@ -27,10 +27,14 @@ module.exports = {
           "GET /customers/get/me": "customers.get",
           "GET /customers/:id": "customers.get",
 
+          "GET /shop/list": "shops.list",
+
           "GET /reviews/get/:id": "reviews.get",
           "POST /reviews/create": "reviews.create",
-          "GET /reviews/getAll/:productID": "reviews.list",
+          "GET /reviews/getAll/:productID": "reviews.listByProduct",
+          "GET /reviews": "reviews.list",
           "PUT /reviews/update/:id": "reviews.update",
+          "PUT /reviews/reply/:id": "reviews.reply",
 
           "POST /users/register": "users.register",
           "POST /users/login": "users.login",
@@ -51,7 +55,6 @@ module.exports = {
             return "Unauthorized";
           }
         },
-
         bodyParsers: {
           json: true,
           urlencoded: { extended: true },

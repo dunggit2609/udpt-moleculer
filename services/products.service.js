@@ -7,7 +7,6 @@ var apiResponse = require("../helpers/apiResponse");
 const MongoDBAdapter = require("moleculer-db-adapter-mongo");
 const { ObjectID } = require("bson");
 
-
 module.exports = {
   name: "products",
   mixins: [DbService],
@@ -37,18 +36,17 @@ module.exports = {
    * Actions
    */
   actions: {
-   
-    get: {
-      async handler(ctx) {
-        let data = await this.getById(new ObjectID(ctx.params.id));
-        data = JSON.parse(JSON.stringify(data));
-        if (data) {
-          return apiResponse.successResponseWithData("success", data);
-        }
+    // get: {
+    //   async handler(ctx) {
+    //     let data = await this.getById(new ObjectID(ctx.params.id));
+    //     data = JSON.parse(JSON.stringify(data));
+    //     if (data) {
+    //       return apiResponse.successResponseWithData("success", data);
+    //     }
 
-        return apiResponse.badRequestResponse("Not exists");
-      },
-    },
+    //     return apiResponse.badRequestResponse("Not exists");
+    //   },
+    // },
     getAll: {
       async handler(ctx) {},
     },

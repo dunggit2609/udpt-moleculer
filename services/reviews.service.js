@@ -25,15 +25,23 @@ module.exports = {
       "author",
       "rate",
       "content",
+      "replyList",
       "created_at",
       "updated_at",
     ],
     populates: {
-      "author": {
+      author: {
         action: "customers.get",
         params: {
           populate: [],
           fields: ["_id", "full_name", "email"],
+        },
+      },
+      product: {
+        action: "products.get",
+        params: {
+          populate: [],
+          fields: ["_id", "name"],
         },
       },
     },
@@ -67,8 +75,9 @@ module.exports = {
       },
       async handler(ctx) {
         let entity = ctx.params.comment;
-        entity.productID = ctx.params.productID;
+        entity.product = ctx.params.productID;
         entity.author = ctx.meta.user.user_id.toString();
+        entity.replyList = [];
 
         await this.validateEntity(entity);
 
@@ -79,10 +88,11 @@ module.exports = {
 
         let json = await this.transformDocuments(
           ctx,
-          { populate: ["author"] },
+          { populate: ["author", "product"] },
           doc
         );
         console.log(json);
+
         await this.entityChanged("created", json, ctx);
         if (json) {
           return apiResponse.successResponseWithData("success", json);
@@ -123,7 +133,56 @@ module.exports = {
         };
 
         const doc = await this.adapter.updateById(ctx.params.id, update);
-        const json = await this.transformDocuments(ctx, { populate: ["author"] }, doc);
+        const json = await this.transformDocuments(
+          ctx,
+          { populate: ["author"] },
+          doc
+        );
+        await this.entityChanged("updated", json, ctx);
+        if (json) {
+          return apiResponse.successResponseWithData("success", json);
+        }
+        return apiResponse.badRequestResponse("update fail");
+      },
+    },
+
+    reply: {
+      params: {
+        id: { type: "string" },
+        comment: {
+          type: "object",
+          props: {
+            content: { type: "string", min: 1 },
+          },
+        },
+      },
+      async handler(ctx) {
+        let newData = {};
+
+        const newReply = {
+          ...ctx.params.comment,
+          author: ctx.meta.user.user_id.toString(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+
+        newData.updatedAt = new Date();
+        const comment = await this.getById(ctx.params.id);
+        console.log([...comment.replyList]);
+        newData.replyList = [...comment.replyList, newReply];
+
+        console.log(newData.replyList);
+
+        const update = {
+          $set: newData,
+        };
+
+        const doc = await this.adapter.updateById(ctx.params.id, update);
+        const json = await this.transformDocuments(
+          ctx,
+          { populate: ["author"] },
+          doc
+        );
         await this.entityChanged("updated", json, ctx);
         if (json) {
           return apiResponse.successResponseWithData("success", json);
@@ -142,7 +201,7 @@ module.exports = {
      *
      * @returns {Object} List of comments
      */
-    list: {
+    listByProduct: {
       params: {
         productID: { type: "string" },
         limit: { type: "number", optional: true, convert: true },
@@ -160,6 +219,48 @@ module.exports = {
           query: {
             productID: ctx.params.productID,
           },
+        };
+        let countParams;
+
+        countParams = Object.assign({}, params);
+        // Remove pagination params
+        if (countParams && countParams.limit) countParams.limit = null;
+        if (countParams && countParams.offset) countParams.offset = null;
+
+        const res = await this.Promise.all([
+          // Get rows
+          this.adapter.find(params),
+
+          // Get count of all rows
+          this.adapter.count(countParams),
+        ]);
+
+        const docs = await this.transformDocuments(ctx, params, res[0]);
+        const result = {
+          products: docs,
+          commentsCount: res[1],
+        };
+
+        if (result.commentsCount > 0) {
+          return apiResponse.successResponseWithData("success", result);
+        }
+        return apiResponse.badRequestResponse("Not exists");
+      },
+    },
+    list: {
+      params: {
+        limit: { type: "number", optional: true, convert: true },
+        offset: { type: "number", optional: true, convert: true },
+      },
+      async handler(ctx) {
+        const limit = ctx.params.limit ? Number(ctx.params.limit) : 20;
+        const offset = ctx.params.offset ? Number(ctx.params.offset) : 0;
+
+        let params = {
+          limit,
+          offset,
+          sort: ["-created_at"],
+          populate: ["author", "product"],
         };
         let countParams;
 
