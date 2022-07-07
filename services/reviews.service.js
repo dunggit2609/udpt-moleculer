@@ -61,6 +61,37 @@ module.exports = {
    * Actions
    */
   actions: {
+    getByProductID: {
+      async handler(ctx) {
+        let data = await this.adapter.find({
+          query: { productID: ctx.params.productID },
+        });
+
+        return apiResponse.successResponseWithData('success', data);
+      },
+    },
+    create: {
+      async handler(ctx) {
+        const { content, rate, productID } = ctx.params;
+        const user_id = ctx.meta.user.user_id;
+        let newReview = {
+          _id: new ObjectID(),
+          content: content,
+          rate: rate,
+          productID: productID,
+          author: user_id,
+          created_at: new Date(),
+          updated_at: new Date(),
+        };
+
+        const review = await this.adapter.insert(newReview);
+        if (!review) {
+          return apiResponse.ErrorResponse('Created Failed');
+        }
+
+        return apiResponse.successResponseWithData('success', review);
+      },
+    },
     /**
      * Create a comment
      *
@@ -68,7 +99,7 @@ module.exports = {
      * @param {String} productID - productID
      * @param {Object}  comment - Comment object
      */
-    create: {
+    customerCreate: {
       params: {
         productID: { type: "string" },
         comment: { type: "object" },

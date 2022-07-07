@@ -14,7 +14,7 @@ module.exports = {
   name: "orders",
   mixins: [DbService],
   adapter: new MongoDBAdapter(
-    "mongodb+srv://admin1:123@cluster0.msdkr.mongodb.net/Order?retryWrites=true&w=majority",
+    "mongodb+srv://anpha:123@cluster0.msdkr.mongodb.net/Order?retryWrites=true&w=majority",
     { useUnifiedTopology: true }
   ),
   collection: "Order",
@@ -25,7 +25,7 @@ module.exports = {
     fields: [
       "_id",
       "payment",
-      "review:",
+      "review",
       "customer_id",
       "shipper_id",
       "total_cost",
@@ -309,6 +309,81 @@ module.exports = {
         } catch (err) {
           console.log("errrxx", err);
           return apiResponse.ErrorResponse("Cannot get order");
+        }
+      },
+    },
+
+    createOrder: {
+      async handler(ctx) {
+        try {
+          if (!ctx.meta.user) {
+            return new MoleculerError("Unauthorized", 401);
+          }
+
+          const { user_id } = ctx.meta.user;
+
+          const { items, payment_id } = ctx.params;
+          const products = [];
+
+          const { data: payment } = await ctx.call("payment.getByPaymentID", {
+            payment_id,
+          });
+
+          for (const item of items) {
+            const { data: product } = await ctx.call("products.get", {
+              id: item.id,
+            });
+            console.log(product);
+            if (!product)
+              return apiResponse.notFoundResponse(
+                {},
+                `Product ${item.id} not found`
+              );
+
+            if (item.quantity > product.inventory) {
+              return apiResponse.badRequestResponse(
+                `Insufficient inventory for ${item.id} - ${product.name}`
+              );
+            }
+            products.push({ ...product, quantity: item.quantity });
+          }
+
+          const order = {
+            created_at: new Date(),
+            updated_at: new Date(),
+            _id: new ObjectID(),
+            product: [],
+            customer_id: user_id,
+            shipper_id: null,
+            total_cost: 0,
+            total_product: 0,
+            payment: {
+              status: true,
+              _id: payment._id,
+            },
+          };
+          for (const product of products) {
+            order.product.push({
+              product_id: new ObjectID(product._id),
+              quantity: product.quantity,
+            });
+            order.total_cost += product.unit_price;
+            order.total_product++;
+
+            await ctx.call("products.subInventory", {
+              productID: product._id,
+              productQuantity: product.quantity,
+            });
+          }
+
+          const orderRes = await this.adapter.insert(order);
+          if (!orderRes) {
+            return apiResponse.ErrorResponse("Created Failed");
+          }
+
+          return apiResponse.successResponseWithData("success", orderRes);
+        } catch (err) {
+          return apiResponse.ErrorResponse(err);
         }
       },
     },

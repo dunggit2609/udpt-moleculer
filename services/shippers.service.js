@@ -1,6 +1,6 @@
-"use strict";
+'use strict';
 
-const DbService = require("moleculer-db");
+const DbService = require('moleculer-db');
 
 const getPagingData = require("../helpers/pagingData");
 var apiResponse = require("../helpers/apiResponse");
@@ -8,33 +8,33 @@ const MongoDBAdapter = require("moleculer-db-adapter-mongo");
 const { ObjectID } = require("bson");
 const {format} = require("date-fns")
 module.exports = {
-  name: "shippers",
+  name: 'shippers',
   mixins: [DbService],
   adapter: new MongoDBAdapter(
-    "mongodb+srv://admin1:123@cluster0.msdkr.mongodb.net/Shipper?retryWrites=true&w=majority",
+    'mongodb+srv://anpha:123@cluster0.msdkr.mongodb.net/Shipper?retryWrites=true&w=majority',
     { useUnifiedTopology: true }
   ),
-  collection: "Shipper",
+  collection: 'Shipper',
   /**
    * Service settings
    */
   settings: {
     fields: [
-      "_id",
-      "full_name",
-      "address",
-      "identity",
-      "bank_account",
-      "work_zone",
-      "email",
-      "phone",
-      "user_id",
-      "created_at",
-      "updated_at",
-      "register_at",
-      "working_info",
-      "checking_result",
-      "canReceiveOrder",
+      '_id',
+      'full_name',
+      'address',
+      'identity',
+      'bank_account',
+      'work_zone',
+      'email',
+      'phone',
+      'user_id',
+      'created_at',
+      'updated_at',
+      'register_at',
+      'working_info',
+      'checking_result',
+      'canReceiveOrder',
     ],
   },
 
@@ -62,10 +62,10 @@ module.exports = {
         if (data && data.length > 0) {
           return ctx.params.internal
             ? data[0]
-            : apiResponse.successResponseWithData("success", data[0]);
+            : apiResponse.successResponseWithData('success', data[0]);
         }
 
-        return apiResponse.badRequestResponse("Not exists");
+        return apiResponse.badRequestResponse('Not exists');
       },
     },
     getInfo: {
@@ -73,10 +73,10 @@ module.exports = {
         let data = await this.getById(new ObjectID(ctx.meta.user.user_id));
 
         if (data) {
-          return apiResponse.successResponseWithData("success", data);
+          return apiResponse.successResponseWithData('success', data);
         }
 
-        return apiResponse.badRequestResponse("Not exists");
+        return apiResponse.badRequestResponse('Not exists');
       },
     },
     updateHealth: {
@@ -95,9 +95,9 @@ module.exports = {
 
           const result = await this._update(new ObjectID(shipper_id), newShipper);
           if (!result) {
-            return apiResponse.ErrorResponse("Update failed");
+            return apiResponse.ErrorResponse('Update failed');
           }
-          return apiResponse.successResponse("Success");
+          return apiResponse.successResponse('Success');
         } catch (err) {
           console.log("err", err);
           return apiResponse.ErrorResponse("Cannot update health");

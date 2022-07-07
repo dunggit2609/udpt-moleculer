@@ -1,13 +1,13 @@
-"use strict";
+'use strict';
 
-const DbService = require("moleculer-db");
+const DbService = require('moleculer-db');
 
-var apiResponse = require("../helpers/apiResponse");
-const MongoDBAdapter = require("moleculer-db-adapter-mongo");
-const { ObjectID } = require("bson");
-var bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const { hash } = require("../helpers/hash");
+var apiResponse = require('../helpers/apiResponse');
+const MongoDBAdapter = require('moleculer-db-adapter-mongo');
+const { ObjectID } = require('bson');
+var bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const { hash } = require('../helpers/hash');
 const {
   USER_ROLE_CUSTOMER,
   USER_ROLE_SHIPPER,
@@ -15,22 +15,22 @@ const {
   ADMIN,
 } = require("../constant");
 
-const access_token_secret = "!@$#^%&*AzQ,PI)o(";
+const access_token_secret = '!@$#^%&*AzQ,PI)o(';
 const access_token_life = 86400;
 
 module.exports = {
-  name: "users",
+  name: 'users',
   mixins: [DbService],
   adapter: new MongoDBAdapter(
-    "mongodb+srv://admin1:123@cluster0.msdkr.mongodb.net/Auth?retryWrites=true&w=majority",
+    'mongodb+srv://anpha:123@cluster0.msdkr.mongodb.net/Auth?retryWrites=true&w=majority',
     { useUnifiedTopology: true }
   ),
-  collection: "User",
+  collection: 'User',
   /**
    * Service settings
    */
   settings: {
-    fields: ["_id", "username", "password", "email", "phone", "role", "status"],
+    fields: ['_id', 'username', 'password', 'email', 'phone', 'role', 'status'],
   },
 
   /**
@@ -67,13 +67,13 @@ module.exports = {
           location,
           business_cert,
           description,
-        } = payload;
+        } = ctx.params;
         try {
           const existedUsername = await this.adapter.find({
             query: { username: username },
           });
           if (existedUsername && existedUsername.length > 0) {
-            return apiResponse.conflictResponse("Username is already exist");
+            return apiResponse.conflictResponse('Username is already exist');
           }
 
           const existedEmail = await this.adapter.find({
@@ -81,7 +81,7 @@ module.exports = {
           });
 
           if (existedEmail && existedEmail.length > 0) {
-            return apiResponse.conflictResponse("Email is already exist");
+            return apiResponse.conflictResponse('Email is already exist');
           }
 
           let newUser = {
@@ -101,7 +101,7 @@ module.exports = {
 
           const user = await this.adapter.insert(userPayload);
           if (!user) {
-            return apiResponse.ErrorResponse("Create failed!");
+            return apiResponse.ErrorResponse('Create failed!');
           }
 
           let createCustomerSuccess, createShipperSuccess, createShopSuccess;
@@ -121,7 +121,7 @@ module.exports = {
                 phone,
                 user_id: user._id,
               };
-              createCustomerSuccess = ctx.call("customers.create", newCustomer);
+              createCustomerSuccess = ctx.call('customers.create', newCustomer);
               userData.user_id = createCustomerSuccess._id;
               break;
             case USER_ROLE_SHIPPER:
@@ -137,7 +137,7 @@ module.exports = {
               };
 
               createShipperSuccess = await ctx.call(
-                "shippers.create",
+                'shippers.create',
                 newShipper
               );
 
@@ -157,7 +157,7 @@ module.exports = {
                 user_id: user._id,
               };
 
-              createShopSuccess = await ctx.call("shops.create", newShop);
+              createShopSuccess = await ctx.call('shops.create', newShop);
 
               userData.user_id = createShopSuccess._id;
 
@@ -172,7 +172,7 @@ module.exports = {
             !createCustomerSuccess
           ) {
             await this.adapter.removeById(user._id);
-            return apiResponse.ErrorResponse("Sign up failed");
+            return apiResponse.ErrorResponse('Sign up failed');
           }
 
           const jwtPayload = userData;
@@ -183,9 +183,9 @@ module.exports = {
             new Date().getTime() +
             access_token_life * 60 * 60 * 1000
           ).toLocaleString();
-          return apiResponse.successResponseWithData("success", userData);
+          return apiResponse.successResponseWithData('success', userData);
         } catch (ex) {
-          console.log("ex", ex);
+          console.log('ex', ex);
           return apiResponse.ErrorResponse(ex.message);
         }
       },
@@ -202,7 +202,7 @@ module.exports = {
 
         if (!username || !password) {
           return apiResponse.badRequestResponse(
-            "Username and password are required"
+            'Username and password are required'
           );
         }
 
@@ -212,7 +212,7 @@ module.exports = {
           });
 
           if (!users || users.length === 0) {
-            return apiResponse.badRequestResponse("User not exists");
+            return apiResponse.badRequestResponse('User not exists');
           }
 
           const user = users[0];
@@ -234,7 +234,7 @@ module.exports = {
                 userData.user_id = customer._id;
                 break;
               case USER_ROLE_SHIPPER:
-                let shipper = await ctx.call("shippers.getByUserId", {
+                let shipper = await ctx.call('shippers.getByUserId', {
                   id: user._id,
                   internal: true,
                 });
@@ -243,7 +243,7 @@ module.exports = {
                 break;
 
               case USER_ROLE_SHOP:
-                shop = await ctx.call("shops.getByUserId", {
+                shop = await ctx.call('shops.getByUserId', {
                   id: user._id,
                   internal: true,
                 });
@@ -263,12 +263,12 @@ module.exports = {
             const jwtData = { expiresIn: access_token_life };
             const secret = access_token_secret;
             userData.token = jwt.sign(jwtPayload, secret, jwtData);
-            return apiResponse.successResponseWithData("Success", userData);
+            return apiResponse.successResponseWithData('Success', userData);
           } else {
-            return apiResponse.unauthorizedResponse("User or password wrong");
+            return apiResponse.unauthorizedResponse('User or password wrong');
           }
         } catch (err) {
-          console.log("err", err);
+          console.log('err', err);
           return apiResponse.ErrorResponse(err.message);
         }
       },

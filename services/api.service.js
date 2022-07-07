@@ -58,6 +58,15 @@ module.exports = {
           "PUT /reviews/reply/:id": "reviews.reply",
 
           "GET /shops": "shops.list",
+
+          "POST /orders": "orders.createOrder",
+
+          "GET /reviews/:productID": "reviews.getByProductID",
+          "POST /reviews/": "reviews.customerCreate",
+
+          "POST customers/shipping-info": "customers.updateAddress",
+
+          "GET products/search": "products.searchAndFilter",
         },
         onBeforeCall(ctx, route, req, res) {
           let accessToken = req.headers["authorization"];
