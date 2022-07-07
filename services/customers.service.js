@@ -94,6 +94,21 @@ module.exports = {
         return apiResponse.successResponseWithData('success', customer);
       },
     },
+    updateAddress: {
+      async handler(ctx) {
+        const user_id = ctx.meta.user;
+
+        console.log(user_id);
+        try {
+          if (!ctx.meta.user) {
+            return new MoleculerError('Unauthorized', 401);
+          }
+        } catch (err) {
+          console.log('err', err);
+          return apiResponse.ErrorResponse('Update failed');
+        }
+      },
+    },
   },
 
   /**

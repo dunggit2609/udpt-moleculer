@@ -21,7 +21,7 @@ module.exports = {
   name: 'users',
   mixins: [DbService],
   adapter: new MongoDBAdapter(
-    'mongodb+srv://thangbach:123@cluster0.msdkr.mongodb.net/Auth?retryWrites=true&w=majority',
+    'mongodb+srv://anpha:123@cluster0.msdkr.mongodb.net/Auth?retryWrites=true&w=majority',
     { useUnifiedTopology: true }
   ),
   collection: 'User',
@@ -217,10 +217,11 @@ module.exports = {
 
             switch (user.role) {
               case USER_ROLE_CUSTOMER:
-                let customer = ctx.call('customers.getByUserId', {
+                let customer = await ctx.call('customers.getByUserId', {
                   id: user._id,
                   internal: true,
                 });
+                console.log(customer);
                 userData.user_id = customer._id;
                 break;
               case USER_ROLE_SHIPPER:

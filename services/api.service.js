@@ -29,9 +29,12 @@ module.exports = {
 
           'POST /orders/getAllByShipper': 'orders.getAllByShipper',
           'POST /orders/update-status': 'orders.updateStatus',
+          'POST /orders': 'orders.createOrder',
 
           'GET /reviews/:productID': 'reviews.getByProductID',
           'POST /reviews/': 'reviews.create',
+
+          'POST customers/shipping-info': 'customers.updateAddress',
         },
         onBeforeCall(ctx, route, req, res) {
           let accessToken = req.headers['authorization'];
@@ -40,7 +43,11 @@ module.exports = {
 
             //user_id nay la id cua tung role, vd role shipper
             //thi user_id nay la shipper_id chu khong phai user_id trong bang user
-            ctx.meta.user = { role: decoded.role, user_id: decoded.user_id };
+            console.log(decoded);
+            ctx.meta.user = {
+              role: decoded.role,
+              user_id: decoded.user_id,
+            };
           } else {
             return 'Unauthorized';
           }
