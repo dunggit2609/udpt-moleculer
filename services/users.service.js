@@ -12,6 +12,7 @@ const {
   USER_ROLE_CUSTOMER,
   USER_ROLE_SHIPPER,
   USER_ROLE_SHOP,
+  ADMIN,
 } = require("../constant");
 
 const access_token_secret = "!@$#^%&*AzQ,PI)o(";
@@ -48,7 +49,8 @@ module.exports = {
   actions: {
     register: {
       async handler(ctx) {
-        const payload = JSON.parse(Object.keys(ctx.params)[0])
+        console.log(JSON.parse(Object.keys(ctx.params)[0]));
+        const payload = JSON.parse(Object.keys(ctx.params)[0]);
         const {
           username,
           password,
@@ -190,9 +192,13 @@ module.exports = {
     },
     login: {
       async handler(ctx) {
-        const payload = JSON.parse(Object.keys(ctx.params)[0])
-				const { username, password } = payload;
-				// const { username, password } = ctx.params;
+        let payload;
+        try {
+          payload = JSON.parse(Object.keys(ctx.params)[0]);
+        } catch (error) {
+          payload = ctx.params;
+        }
+        const { username, password } = payload;
 
         if (!username || !password) {
           return apiResponse.badRequestResponse(
@@ -220,10 +226,11 @@ module.exports = {
 
             switch (user.role) {
               case USER_ROLE_CUSTOMER:
-                let customer = ctx.call("customers.getByUserId", {
+                let customer = await ctx.call("customers.getByUserId", {
                   id: user._id,
                   internal: true,
                 });
+
                 userData.user_id = customer._id;
                 break;
               case USER_ROLE_SHIPPER:
@@ -244,6 +251,10 @@ module.exports = {
                 userData.user_id = shop._id;
 
                 break;
+              case ADMIN:
+                userData.user_id = user._id;
+                break;
+
               default:
                 break;
             }

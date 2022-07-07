@@ -7,7 +7,6 @@ var apiResponse = require("../helpers/apiResponse");
 const MongoDBAdapter = require("moleculer-db-adapter-mongo");
 const { ObjectID } = require("bson");
 
-
 module.exports = {
   name: "products",
   mixins: [DbService],
@@ -37,7 +36,6 @@ module.exports = {
    * Actions
    */
   actions: {
-   
     get: {
       async handler(ctx) {
         let data = await this.getById(new ObjectID(ctx.params.id));

@@ -205,6 +205,32 @@ module.exports = {
         }
       },
     },
+    getCountByShipperId: {
+      async handler(ctx) {
+        let params = {
+          query: {
+            shipper_id: new ObjectID(ctx.params.shipper_id),
+          },
+        };
+
+        const res = await this.adapter.count(params);
+
+        return res;
+      },
+    },
+    getCountByCustomerId: {
+      async handler(ctx) {
+        let params = {
+          query: {
+            customer_id: new ObjectID(ctx.params.customer_id),
+          },
+        };
+
+        const res = await this.adapter.count(params);
+
+        return res;
+      },
+    },
     updateStatus: {
       async handler(ctx) {
         try {

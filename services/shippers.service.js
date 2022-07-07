@@ -70,7 +70,7 @@ module.exports = {
     },
     getInfo: {
       async handler(ctx) {
-        let data = await this.getById(new ObjectID(ctx.meta.user.user_id) );
+        let data = await this.getById(new ObjectID(ctx.meta.user.user_id));
 
         if (data) {
           return apiResponse.successResponseWithData("success", data);
@@ -90,7 +90,7 @@ module.exports = {
         try {
           const shipper = await this.getById(new ObjectID(shipper_id));
           const newShipper = Object.assign({}, shipper);
-          newShipper.working_info.push(payload)
+          newShipper.working_info.push(payload);
 
 
           const result = await this._update(new ObjectID(shipper_id), newShipper);
@@ -100,8 +100,47 @@ module.exports = {
           return apiResponse.successResponse("Success");
         } catch (err) {
           console.log("err", err);
-          return apiResponse.ErrorResponse( "Cannot update health");
+          return apiResponse.ErrorResponse("Cannot update health");
         }
+      },
+    },
+    list: {
+      params: {
+        limit: { type: "number", optional: true, convert: true },
+        offset: { type: "number", optional: true, convert: true },
+      },
+      async handler(ctx) {
+        const limit = ctx.params.limit ? Number(ctx.params.limit) : 20;
+        const offset = ctx.params.offset ? Number(ctx.params.offset) : 0;
+
+        let params = {
+          limit,
+          offset,
+          sort: ["-created_at"],
+          populate: ["orders"],
+        };
+        let countParams;
+
+        countParams = Object.assign({}, params);
+        // Remove pagination params
+        if (countParams && countParams.limit) countParams.limit = null;
+        if (countParams && countParams.offset) countParams.offset = null;
+
+        const res = await this.Promise.all([
+          // Get rows
+          this.adapter.find(params),
+
+          // Get count of all rows
+          this.adapter.count(countParams),
+        ]);
+
+        const docs = await this.transformDocuments(ctx, params, res[0]);
+        const r = await this.transformResult(ctx, docs);
+        r.shipperCount = res[1];
+        if (r.shipperCount > 0) {
+          return apiResponse.successResponseWithData("success", r);
+        }
+        return apiResponse.badRequestResponse("Not exists");
       },
     },
     getHealthHistory: {
@@ -168,7 +207,42 @@ module.exports = {
   /**
    * Methods
    */
-  methods: {},
+  methods: {
+    /**
+     * Transform the result entities to follow the RealWorld API spec
+     *
+     * @param {Context} ctx
+     * @param {Array} entities
+     * @param {Object} user - Logged in user
+     */
+    async transformResult(ctx, entities) {
+      if (Array.isArray(entities)) {
+        const shippers = await this.Promise.all(
+          entities.map((item) => this.transformEntity(ctx, item))
+        );
+        return { shippers };
+      } else {
+        const shipper = await this.transformEntity(ctx, entities);
+        return { shipper };
+      }
+    },
+
+    /**
+     * Transform a result entity to follow the RealWorld API spec
+     *
+     * @param {Context} ctx
+     * @param {Object} entity
+     * @param {Object} user - Logged in user
+     */
+    async transformEntity(ctx, entity) {
+      if (!entity) return this.Promise.resolve();
+      const res = await ctx.call("orders.getCountByShipperId", {
+        shipper_id: entity._id.toString(),
+      });
+      entity.totalOrders = res;
+      return entity;
+    },
+  },
 
   /**
    * Service created lifecycle event handler
