@@ -13,7 +13,6 @@ exports.successResponseWithData = (msg, data) => {
 		message: msg,
 		data: data
 	};
-	console.log("x", resData)
 	return resData;
 };
 exports.successResponseWithFile = (res, msg, data) => {
