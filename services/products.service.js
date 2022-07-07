@@ -63,6 +63,20 @@ module.exports = {
         }
       },
     },
+    searchAndFilter: {
+      async handler(ctx) {
+        const { keyword, sort, order, page, size } = ctx.params;
+        let data = await this.adapter.find({ $text: { $search: keyword } });
+
+        const { totalItems, response } = getPagingData(data, page, size);
+        return apiResponse.successResponseWithPagingData(
+          'Success',
+          response,
+          page,
+          totalItems
+        );
+      },
+    },
   },
 
   /**

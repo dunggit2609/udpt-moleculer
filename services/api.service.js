@@ -35,6 +35,8 @@ module.exports = {
           'POST /reviews/': 'reviews.create',
 
           'POST customers/shipping-info': 'customers.updateAddress',
+
+          'GET products/search': 'products.searchAndFilter',
         },
         onBeforeCall(ctx, route, req, res) {
           let accessToken = req.headers['authorization'];
