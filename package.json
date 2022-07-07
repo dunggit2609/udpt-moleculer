@@ -17,7 +17,9 @@
     "moleculer-repl": "^0.3.0"
   },
   "dependencies": {
+    "amqplib": "^0.10.0",
     "bcrypt": "^5.0.1",
+    "dotenv": "^16.0.1",
     "date-fns": "^2.28.0",
     "jsonwebtoken": "^8.5.1",
     "jwt-decode": "^3.1.2",

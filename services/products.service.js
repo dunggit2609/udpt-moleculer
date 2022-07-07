@@ -18,9 +18,9 @@ module.exports = {
   /**
    * Service settings
    */
-  settings: {
-    fields: [],
-  },
+	settings: {
+		fields: [ '_id', 'name', 'description', 'inventory', 'unit_price', 'unit', 'product_type', 'shop_id' ]
+	},
 
   /**
    * Service metadata
@@ -44,9 +44,78 @@ module.exports = {
           return apiResponse.successResponseWithData('success', data);
         }
 
-        return apiResponse.badRequestResponse('Not exists');
-      },
-    },
+				return apiResponse.badRequestResponse('Not exists');
+			}
+		},
+
+		getAll: {
+			async handler(ctx) {
+				let data = await this.adapter.find();
+				data = JSON.parse(JSON.stringify(data));
+				if (data) {
+					return apiResponse.successResponseWithData('success', data);
+				}
+
+				return apiResponse.badRequestResponse('Not exists');
+			}
+		},
+
+		getAllProductByShop: {
+			async handler(ctx) {
+				console.log('params._id: ', ctx.params.id);
+				let data = await this.adapter.find({ query: { shop_id: ctx.params.id } });
+				data = JSON.parse(JSON.stringify(data));
+				if (data) {
+					return apiResponse.successResponseWithData('success', data);
+				}
+
+				return apiResponse.badRequestResponse('Not exists');
+			}
+		},
+
+		create: {
+			async handler(ctx) {
+				try {
+					console.log(ctx.params);
+					const curDate = new Date();
+					const { name, description, inventory, unit_price, unit, product_type, shop_id } = ctx.params;
+					const data = await this.adapter.insert({
+						name,
+						description,
+						inventory,
+						unit_price,
+						unit,
+						product_type,
+						shop_id,
+						created_at: curDate,
+						updated_at: curDate
+					});
+					return apiResponse.successResponseWithData('successful create new product', data);
+				} catch (err) {
+					return apiResponse.badRequestResponse('Cannot create a product');
+				}
+			}
+		},
+
+		update: {
+			async handler(ctx) {
+				try {
+					//const curDate = new Date();
+					const product_id = ctx.params._id;
+					console.log(product_id);
+					let { _id, ...updateProduct } = ctx.params;
+					console.log(updateProduct);
+					let curProduct = await this.adapter.find({ query: { _id: new ObjectID(product_id) } });
+					console.log('curProduct: ', curProduct);
+					let result = await this.adapter.updateById(_id, { $set: { ...updateProduct } }, { new: true });
+					console.log('result: ', result);
+					return apiResponse.successResponseWithData('successful update product', result);
+				} catch (err) {
+					return apiResponse.badRequestResponse('Cannot create a product');
+				}
+			}
+		},
+       
     getAll: {
       async handler(ctx) {},
     },
@@ -85,7 +154,9 @@ module.exports = {
         return data.filter(x => ids.includes(`${x._id}`))
       },
     },
-  },
+	},
+    
+
 },
 
   /**

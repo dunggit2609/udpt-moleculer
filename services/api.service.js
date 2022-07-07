@@ -67,6 +67,21 @@ module.exports = {
           "POST customers/shipping-info": "customers.updateAddress",
 
           "GET products/search": "products.searchAndFilter",
+
+
+					'POST /shop/create': 'shops.create',
+					'POST /shop/update': 'shops.update',
+					'POST /shop/insertProduct': 'shops.insertProduct',
+					'POST /shop/updateProduct': 'shops.updateProduct',
+					'POST /shop/getOrderById': 'shops.getOrderById',
+					'GET /shop/getAllProduct': 'shops.getAllProduct',
+
+					'POST /product/create': 'products.create',
+					'PUT /product/update': 'products.update',
+					'GET /product/getAll': 'products.getAll',
+					'GET /product/getAllProductByShop': 'products.getAllProductByShop',
+
+					'GET /productCategory/getAll': 'productCategories.getAll'
         },
         onBeforeCall(ctx, route, req, res) {
           let accessToken = req.headers["authorization"];
