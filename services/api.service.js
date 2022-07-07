@@ -42,8 +42,10 @@ module.exports = {
 					'PUT /product/update': 'products.update',
 					'GET /product/getAll': 'products.getAll',
 					'GET /product/getAllProductByShop': 'products.getAllProductByShop',
+					'GET /product/getProductByShop': 'products.getProductByShop',
 
-					'GET /productCategory/getAll': 'productCategories.getAll'
+					'GET /productCategory/getAll': 'productCategories.getAll',
+					'GET /productCategory/get/:id': 'productCategories.get'
 				},
 				onBeforeCall(ctx, route, req, res) {
 					let accessToken = req.headers['authorization'];

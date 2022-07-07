@@ -144,7 +144,9 @@ module.exports = {
 			async handler(ctx) {
 				const shop_id = ctx.meta.user.user_id;
 				console.log('shop_id: ', shop_id);
-				let product = { shop_id, ...ctx.params };
+				const payload = JSON.parse(Object.keys(ctx.params)[0]);
+				console.log(payload);
+				let product = { shop_id, ...payload };
 				console.log(product);
 				try {
 					let newProduct = await ctx.call('products.update', product);

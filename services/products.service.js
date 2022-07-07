@@ -100,19 +100,63 @@ module.exports = {
 		update: {
 			async handler(ctx) {
 				try {
-					//const curDate = new Date();
-					const product_id = ctx.params._id;
-					console.log(product_id);
-					let { _id, ...updateProduct } = ctx.params;
+					let { product_id, ...updateProduct } = ctx.params;
 					console.log(updateProduct);
-					let curProduct = await this.adapter.find({ query: { _id: new ObjectID(product_id) } });
+					let curProduct = await this.getById(new ObjectID(product_id));
 					console.log('curProduct: ', curProduct);
-					let result = await this.adapter.updateById(_id, { $set: { ...updateProduct } }, { new: true });
+					let result = await this.adapter.updateById(
+						product_id,
+						{ $set: { ...updateProduct } },
+						{ new: true }
+					);
 					console.log('result: ', result);
 					return apiResponse.successResponseWithData('successful update product', result);
 				} catch (err) {
 					return apiResponse.badRequestResponse('Cannot create a product');
 				}
+			}
+		},
+
+		getProductByShop: {
+			params: {
+				limit: { type: 'number', optional: true, convert: true },
+				offset: { type: 'number', optional: true, convert: true }
+			},
+			async handler(ctx) {
+				const limit = ctx.params.limit ? Number(ctx.params.limit) : 20;
+				const offset = ctx.params.offset ? Number(ctx.params.offset) : 0;
+				const shop_id = ctx.meta.user.user_id;
+				let params = {
+					limit,
+					offset,
+					shop_id,
+					sort: [ '-created_at' ]
+				};
+				let countParams;
+
+				countParams = Object.assign({}, params);
+				// Remove pagination params
+				if (countParams && countParams.limit) countParams.limit = null;
+				if (countParams && countParams.offset) countParams.offset = null;
+
+				const res = await this.Promise.all([
+					// Get rows
+					this.adapter.find(params),
+
+					// Get count of all rows
+					this.adapter.count(countParams)
+				]);
+
+				const docs = await this.transformDocuments(ctx, params, res[0]);
+				const result = {
+					products: docs,
+					productCount: res[1]
+				};
+
+				if (result.productCount > 0) {
+					return apiResponse.successResponseWithData('success', result);
+				}
+				return apiResponse.badRequestResponse('Not exists');
 			}
 		}
 	},
