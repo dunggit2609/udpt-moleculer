@@ -22,7 +22,7 @@ module.exports = {
   name: 'users',
   mixins: [DbService],
   adapter: new MongoDBAdapter(
-    'mongodb+srv://anpha:123@cluster0.msdkr.mongodb.net/Auth?retryWrites=true&w=majority',
+    'mongodb+srv://admin1:123@cluster0.msdkr.mongodb.net/Auth?retryWrites=true&w=majority',
     { useUnifiedTopology: true }
   ),
   collection: 'User',
@@ -243,7 +243,7 @@ module.exports = {
                 break;
 
               case USER_ROLE_SHOP:
-                shop = await ctx.call('shops.getByUserId', {
+                let shop = await ctx.call('shops.getByUserId', {
                   id: user._id,
                   internal: true,
                 });

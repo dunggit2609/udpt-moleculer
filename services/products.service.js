@@ -11,7 +11,7 @@ module.exports = {
   name: 'products',
   mixins: [DbService],
   adapter: new MongoDBAdapter(
-    'mongodb+srv://anpha:123@cluster0.msdkr.mongodb.net/Product?retryWrites=true&w=majority',
+    'mongodb+srv://admin1:123@cluster0.msdkr.mongodb.net/Product?retryWrites=true&w=majority',
     { useUnifiedTopology: true }
   ),
   collection: 'Product',
