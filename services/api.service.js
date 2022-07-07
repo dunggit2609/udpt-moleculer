@@ -35,6 +35,9 @@ module.exports = {
           "GET /shippers/:id": "shippers.getByUserId",
           "POST /shippers/update-health": "shippers.updateHealth",
           "GET /shippers/get/me": "shippers.getInfo",
+          "GET /shippers": "shippers.list",
+
+          "GET /customers": "customers.list",
 
           "POST /users/register": "users.register",
           "POST /users/login": "users.login",
@@ -51,6 +54,8 @@ module.exports = {
           "GET /reviews": "reviews.list",
           "PUT /reviews/update/:id": "reviews.update",
           "PUT /reviews/reply/:id": "reviews.reply",
+
+          "GET /shops": "shops.list",
         },
         onBeforeCall(ctx, route, req, res) {
           let accessToken = req.headers["authorization"];

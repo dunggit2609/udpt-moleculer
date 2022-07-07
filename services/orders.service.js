@@ -128,7 +128,7 @@ module.exports = {
               id: data[0]._id,
             });
 
-            console.log("zxc", rs)
+            console.log("zxc", rs);
             if (!rs.success) {
               return apiResponse.successResponseWithData("no_data", null);
             }
@@ -207,6 +207,32 @@ module.exports = {
           console.log("errrxx", err);
           return apiResponse.ErrorResponse("Cannot get order");
         }
+      },
+    },
+    getCountByShipperId: {
+      async handler(ctx) {
+        let params = {
+          query: {
+            shipper_id: new ObjectID(ctx.params.shipper_id),
+          },
+        };
+
+        const res = await this.adapter.count(params);
+
+        return res;
+      },
+    },
+    getCountByCustomerId: {
+      async handler(ctx) {
+        let params = {
+          query: {
+            customer_id: new ObjectID(ctx.params.customer_id),
+          },
+        };
+
+        const res = await this.adapter.count(params);
+
+        return res;
       },
     },
     updateStatus: {
