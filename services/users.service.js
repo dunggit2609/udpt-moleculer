@@ -192,6 +192,7 @@ module.exports = {
       async handler(ctx) {
         const payload = JSON.parse(Object.keys(ctx.params)[0])
 				const { username, password } = payload;
+				// const { username, password } = ctx.params;
 
         if (!username || !password) {
           return apiResponse.badRequestResponse(

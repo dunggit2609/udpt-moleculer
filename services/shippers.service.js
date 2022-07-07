@@ -6,7 +6,7 @@ const getPagingData = require("../helpers/pagingData");
 var apiResponse = require("../helpers/apiResponse");
 const MongoDBAdapter = require("moleculer-db-adapter-mongo");
 const { ObjectID } = require("bson");
-
+const {format} = require("date-fns")
 module.exports = {
   name: "shippers",
   mixins: [DbService],
@@ -52,50 +52,7 @@ module.exports = {
    * Actions
    */
   actions: {
-    // list: {
-    // 	async handler(ctx) {
-    // 		const { keyword, page, size } = ctx.params;
-    // 		let query = "SELECT * FROM Players WHERE  '$keyword' = '' or  `FULLNAME` like '%$keyword%'  or `NUMBER` like '%$keyword%'   or `NATIONALITY` like '%$keyword%' or `POSITION` like  '%$keyword%'";
-    // 		query = query.replaceAll("$keyword", keyword ? keyword : "")
-
-    // 		let data = await this.adapter.db.query(query)
-
-    // 		data = JSON.parse(JSON.stringify(data))
-    // 		data = data.length > 0 ? data[0] : []
-    // 		const { totalItems, response } = getPagingData(data, page, size)
-    // 		return { totalItems: totalItems, page: page ? page : 1, size: size ? size : 10, data: response };
-    // 	}
-    // },
-    // advancedSearch: {
-    // 	async handler(ctx) {
-    // 		const payload = JSON.parse(Object.keys(ctx.params)[0])
-    // 		const { ClubID, Position, FullName, Nationality, Number, page, size } = payload;
-    // 		const queries = {
-    // 			ClubID: ClubID,
-    // 			Position: Position, FullName: FullName, Nationality: Nationality, Number: Number,
-    // 		};
-
-    // 		Object.keys(queries).forEach(x => {
-    // 			if (queries[x] === null || queries[x] === undefined) {
-    // 				queries[x] = '';
-    // 			}
-    // 		});
-    // 		let query = "SELECT * FROM Players WHERE ('$clubID' = 'all' or '$clubID' = ClubID or '$clubID' = '') and ( '$name' = '' or  `FullName` like '%$name%' ) and ('$number' = '' or `Number` like '%$number%'  ) and ('$nationality' = '' or `Nationality` like '%$nationality%' ) and ('$position' = '' or `Position` like '%$position%' )";
-
-    // 		query = query.replaceAll("$clubID", queries.ClubID)
-    // 			.replaceAll("$name", queries.FullName)
-    // 			.replaceAll("$number", queries.Number)
-    // 			.replaceAll("$nationality", queries.Nationality)
-    // 			.replaceAll("$position", queries.Position)
-
-    // 		let data = await this.adapter.db.query(query);
-    // 		data = JSON.parse(JSON.stringify(data))
-    // 		data = data.length > 0 ? data[0] : []
-
-    // 		const { response, totalItems } = getPagingData(data, +page, +size)
-    // 		return { totalItems: totalItems, page: page ? page : 1, size: size ? size : 10, data: response };
-    // 	}
-    // },
+  
     getByUserId: {
       async handler(ctx) {
         let data = await this.adapter.find({
@@ -124,8 +81,12 @@ module.exports = {
     },
     updateHealth: {
       async handler(ctx) {
+        if (!ctx.meta.user || !ctx.meta.user.user_id) {
+          return;
+        }
+        
+        const payload = JSON.parse(Object.keys(ctx.params)[0]);
         const shipper_id = ctx.meta.user.user_id;
-        const payload = ctx.params
         try {
           const shipper = await this.getById(new ObjectID(shipper_id));
           const newShipper = Object.assign({}, shipper);
@@ -133,7 +94,6 @@ module.exports = {
 
 
           const result = await this._update(new ObjectID(shipper_id), newShipper);
-
           if (!result) {
             return apiResponse.ErrorResponse("Update failed");
           }
@@ -144,64 +104,60 @@ module.exports = {
         }
       },
     },
-    // create: {
-    // 	async handler(ctx) {
-    // 		let params = JSON.parse(Object.keys(ctx.params)[0]);
-    // 		let count = await this.adapter.find();
-    // 		count = JSON.parse(JSON.stringify(count)).sort((a, b) => b.id - a.id)
+    getHealthHistory: {
+      async handler(ctx) {
+        try {
+          if (!ctx.meta.user || !ctx.meta.user.user_id) {
+            return;
+          }
+          const payload = JSON.parse(Object.keys(ctx.params)[0]);
 
-    // 		if (count.length > 0) {
-    // 			count = count[0].id
-    // 		}
+          const { page, size, from, to } = payload;
 
-    // 		if (count) {
-    // 			params.id = count + 1;
-    // 		}
+          const shipper_id = ctx.meta.user.user_id;
+          const shipper = await this.getById(new ObjectID(shipper_id))
 
-    // 		let data = await this.adapter.insert(params)
-    // 		data = JSON.parse(JSON.stringify(data))
+          let heathHistory = []
+          if (shipper) {
+            heathHistory = shipper.working_info
+          }
 
-    // 		if (data) {
-    // 			return { success: true, data: data }
-    // 		}
+          const fromDate = from
+            ? new Date(
+                format(
+                  typeof from === "string" ? new Date(from) : from,
+                  "yyyy-MM-dd"
+                )
+              )
+            : null;
+          const toDate = to
+            ? new Date(
+                format(typeof to === "string" ? new Date(to) : to, "yyyy-MM-dd")
+              )
+            : null;
 
-    // 		return { success: false, data: {} }
-    // 	}
-    // },
-    // updatePlayer: {
-    // 	async handler(ctx) {
-    // 		let params = JSON.parse(Object.keys(ctx.params)[0]);
-    // 		let query = "UPDATE `PLAYERS` SET `FullName` = '$name', `Position` = '$position', `Number` = '$number', `Nationality` = '$nationality' where `id` = '$id'";
-    // 		query = query.replace("$name", params.FullName)
-    // 			.replace("$position", params.Position)
-    // 			.replace("$number", params.Number)
-    // 			.replace("$nationality", params.Nationality)
-    // 			.replace("$id", +params.id)
-    // 		let data = await this.adapter.db.query(query)
-
-    // 		data = JSON.parse(JSON.stringify(data))
-
-    // 		// await this.broker.stop()
-    // 		if (data) {
-    // 			return { success: true }
-    // 		}
-
-    // 		return { success: false }
-    // 	}
-    // },
-    // delete: {
-    // 	async handler(ctx) {
-
-    // 		let data = await this.adapter.remove(ctx.params.id)
-
-    // 		data = JSON.parse(JSON.stringify(data))
-    // 		if (data.length > 0) {
-    // 			return { success: true, data: data[0] }
-    // 		}
-
-    // 		return { success: false, data: {} }
-    // 	}
-    // }
+          heathHistory = heathHistory.filter((x) => {
+            return (
+              (!fromDate ||
+                new Date(format(typeof x.date === "string" ? new Date(x.date) : x.date, "yyyy-MM-dd")) >= fromDate) &&
+              (!toDate ||
+                new Date(format(typeof x.date === "string" ? new Date(x.date) : x.date, "yyyy-MM-dd")) <= toDate)
+            );
+          });
+          const { response, totalItems } = getPagingData(heathHistory, page, size);
+          return apiResponse.successResponseWithPagingData(
+            "success",
+            response,
+            page,
+            totalItems
+          );
+        } catch (err) {
+          console.log("errrxx", err);
+          return apiResponse.ErrorResponse("Cannot get order");
+        }
+      }
+    }
+   
   },
 
   /**

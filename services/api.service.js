@@ -35,13 +35,16 @@ module.exports = {
           "GET /shippers/:id": "shippers.getByUserId",
           "POST /shippers/update-health": "shippers.updateHealth",
           "GET /shippers/get/me": "shippers.getInfo",
+          "POST /shippers/getHealthHistory": "shippers.getHealthHistory",
 
           "POST /users/register": "users.register",
           "POST /users/login": "users.login",
 
           "POST /orders/getAllByShipper": "orders.getAllByShipper",
           "GET /orders/getDetailByShipper": "orders.getDetailByShipper",
-          "GET /orders/getDeliveringOrderByShipper": "orders.getDeliveringOrderByShipper",
+          "GET /orders/getDeliveringOrderByShipper":
+            "orders.getDeliveringOrderByShipper",
+          "GET /orders/getNewOrderByShipper": "orders.getNewOrderByShipper",
           "POST /orders/update-status": "orders.updateStatus",
         },
         onBeforeCall(ctx, route, req, res) {
@@ -56,7 +59,7 @@ module.exports = {
           if (!decoded || !decoded.role || !decoded.user_id) {
             // res.writeHead(401);
             //  res.end("Unauthorized");
-			return
+            return;
           }
           //user_id nay la id cua tung role, vd role shipper
           //thi user_id nay la shipper_id chu khong phai user_id trong bang user
