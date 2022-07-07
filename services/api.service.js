@@ -29,21 +29,38 @@ module.exports = {
 
 					'POST /orders/getAllByShipper': 'orders.getAllByShipper',
 					'POST /orders/update-status': 'orders.updateStatus',
+					'GET /orders/get/:id': 'orders.get',
 
 					'POST /shop/create': 'shops.create',
-					'PUT /shop/update': 'shops.update'
+					'POST /shop/update': 'shops.update',
+					'POST /shop/insertProduct': 'shops.insertProduct',
+					'POST /shop/updateProduct': 'shops.updateProduct',
+					'POST /shop/getOrderById': 'shops.getOrderById',
+					'GET /shop/getAllProduct': 'shops.getAllProduct',
+
+					'POST /product/create': 'products.create',
+					'PUT /product/update': 'products.update',
+					'GET /product/getAll': 'products.getAll',
+					'GET /product/getAllProductByShop': 'products.getAllProductByShop',
+
+					'GET /productCategory/getAll': 'productCategories.getAll'
 				},
 				onBeforeCall(ctx, route, req, res) {
 					let accessToken = req.headers['authorization'];
 					if (accessToken) {
 						var decoded = jwt.decode(accessToken);
-
+						console.log(accessToken);
+						console.log(decoded);
 						//user_id nay la id cua tung role, vd role shipper
 						//thi user_id nay la shipper_id chu khong phai user_id trong bang user
 						ctx.meta.user = { role: decoded.role, user_id: decoded.user_id };
 					} else {
 						return 'Unauthorized';
 					}
+				},
+				bodyParsers: {
+					json: true,
+					urlencoded: { extended: true }
 				}
 			}
 		]

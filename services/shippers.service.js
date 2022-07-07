@@ -125,9 +125,12 @@ module.exports = {
 				const shipper_id = ctx.meta.user.user_id;
 				console.log('shipper_id: ', shipper_id);
 				const payload = ctx.params;
+				console.log(payload);
 				try {
 					const shipper = await this.getById(new ObjectID(shipper_id));
+					console.log(shipper);
 					const newShipper = Object.assign({}, shipper);
+					console.log(newShipper);
 					newShipper.working_info.push(payload);
 
 					const result = await this._update(new ObjectID(shipper_id), newShipper);
