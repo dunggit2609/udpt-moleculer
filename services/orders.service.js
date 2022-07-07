@@ -1,39 +1,40 @@
-'use strict';
+"use strict";
 
-const DbService = require('moleculer-db');
+const DbService = require("moleculer-db");
 
-const getPagingData = require('../helpers/pagingData');
-var apiResponse = require('../helpers/apiResponse');
-const MongoDBAdapter = require('moleculer-db-adapter-mongo');
-const { ObjectID } = require('bson');
-const { USER_ROLE_SHIPPER } = require('../constant');
-const { MoleculerError } = require('moleculer').Errors;
+const getPagingData = require("../helpers/pagingData");
+var apiResponse = require("../helpers/apiResponse");
+const MongoDBAdapter = require("moleculer-db-adapter-mongo");
+const { ObjectID } = require("bson");
+const { USER_ROLE_SHIPPER } = require("../constant");
+const { MoleculerError } = require("moleculer").Errors;
+const { format } = require("date-fns");
 
 module.exports = {
-  name: 'orders',
+  name: "orders",
   mixins: [DbService],
   adapter: new MongoDBAdapter(
-    'mongodb+srv://anpha:123@cluster0.msdkr.mongodb.net/Order?retryWrites=true&w=majority',
+    "mongodb+srv://anpha:123@cluster0.msdkr.mongodb.net/Order?retryWrites=true&w=majority",
     { useUnifiedTopology: true }
   ),
-  collection: 'Order',
+  collection: "Order",
   /**
    * Service settings
    */
   settings: {
     fields: [
-      '_id',
-      'payment',
-      'review',
-      'customer_id',
-      'shipper_id',
-      'total_cost',
-      'total_product',
-      'status',
-      'note',
-      'product',
-      'created_at',
-      'updated_at',
+      "_id",
+      "payment",
+      "review",
+      "customer_id",
+      "shipper_id",
+      "total_cost",
+      "total_product",
+      "status",
+      "note",
+      "product",
+      "created_at",
+      "updated_at",
     ],
   },
 
@@ -51,21 +52,102 @@ module.exports = {
    * Actions
    */
   actions: {
-    get: {
+    getDetailByShipper: {
       async handler(ctx) {
         let data = await this.getById(new ObjectID(ctx.params.id));
         data = JSON.parse(JSON.stringify(data));
-        if (data) {
-          return apiResponse.successResponseWithData('success', data);
+
+        const productIds = data.product.map((x) => x.product_id);
+        const products = await ctx.call("products.getByIds", productIds);
+        if (products.length > 0) {
+          data.products = [];
+          data.product.forEach((x) => {
+            const product = products.find(
+              (y) => `${y._id}` === `${x.product_id}`
+            );
+            if (product) {
+              x = { ...x, ...product };
+              data.products.push({ ...product, quantity: x.quantity });
+            }
+          });
+        }
+        delete data.product;
+
+        const customer = await ctx.call("customers.getById", {
+          id: data.customer_id,
+        });
+
+        if (customer) {
+          data.customer_info = customer;
         }
 
-        return apiResponse.badRequestResponse('Not exists');
+        const shop = await ctx.call("shops.getById", { id: data.shop_id });
+
+        if (shop) {
+          data.shop_info = shop;
+        }
+
+        if (data) {
+          return apiResponse.successResponseWithData("success", data);
+        }
+
+        return apiResponse.badRequestResponse("Not exists");
+      },
+    },
+    getDeliveringOrderByShipper: {
+      async handler(ctx) {
+        try {
+          if (!ctx.meta.user || !ctx.meta.user.user_id) {
+            return "Unauthorized";
+          }
+          const shipper_id = ctx.meta.user.user_id;
+          const queries = {
+            status: "2",
+            shipper_id: new ObjectID(shipper_id),
+          };
+
+          Object.keys(queries).forEach((x) => {
+            if (
+              queries[x] === null ||
+              queries[x] === undefined ||
+              queries[x] == "all"
+            ) {
+              delete queries[x];
+            }
+          });
+
+          let data = await this.adapter.find({
+            query: queries,
+          });
+
+          if (data && data.length > 0) {
+            const rs = await ctx.call("orders.getDetailByShipper", {
+              id: data[0]._id,
+            });
+
+            if (!rs.success) {
+              return apiResponse.successResponseWithData("no_data", null);
+            }
+
+            return apiResponse.successResponseWithData("success", rs.data);
+          } else {
+            return apiResponse.successResponseWithData("no_data", null);
+          }
+        } catch (err) {
+          console.log("errrxx", err);
+          return apiResponse.ErrorResponse("Cannot get order");
+        }
       },
     },
     getAllByShipper: {
       async handler(ctx) {
         try {
-          const { page, size, status } = ctx.params;
+          if (!ctx.meta.user || !ctx.meta.user.user_id) {
+            return "Unauthorized";
+          }
+          const payload = JSON.parse(Object.keys(ctx.params)[0]);
+
+          const { page, size, status, order_id, from, to } = payload;
           const shipper_id = ctx.meta.user.user_id;
           const queries = {
             status: status,
@@ -73,43 +155,98 @@ module.exports = {
           };
 
           Object.keys(queries).forEach((x) => {
-            if (queries[x] === null || queries[x] === undefined) {
+            if (
+              queries[x] === null ||
+              queries[x] === undefined ||
+              queries[x] == "all"
+            ) {
               delete queries[x];
             }
           });
 
-          const data = await this.adapter.find({
+          let data = await this.adapter.find({
             query: queries,
           });
 
+          const fromDate = from
+            ? new Date(
+                format(
+                  typeof from === "string" ? new Date(from) : from,
+                  "yyyy-MM-dd"
+                )
+              )
+            : null;
+          const toDate = to
+            ? new Date(
+                format(typeof to === "string" ? new Date(to) : to, "yyyy-MM-dd")
+              )
+            : null;
+
+          data = data.filter((x) => {
+            return (
+              `${x._id}`.includes(order_id ?? "") &&
+              (status !== "all" || ["3", "-3", "-2"].includes(x.status)) &&
+              (!fromDate ||
+                new Date(format(x.created_at, "yyyy-MM-dd")) >= fromDate) &&
+              (!toDate ||
+                new Date(format(x.created_at, "yyyy-MM-dd")) <= toDate)
+            );
+          });
           const { response, totalItems } = getPagingData(data, page, size);
           return apiResponse.successResponseWithPagingData(
-            'success',
+            "success",
             response,
             page,
             totalItems
           );
         } catch (err) {
-          console.log('errrxx', err);
-          return apiResponse.ErrorResponse('Cannot get order');
+          console.log("errrxx", err);
+          return apiResponse.ErrorResponse("Cannot get order");
         }
+      },
+    },
+    getCountByShipperId: {
+      async handler(ctx) {
+        let params = {
+          query: {
+            shipper_id: new ObjectID(ctx.params.shipper_id),
+          },
+        };
+
+        const res = await this.adapter.count(params);
+
+        return res;
+      },
+    },
+    getCountByCustomerId: {
+      async handler(ctx) {
+        let params = {
+          query: {
+            customer_id: new ObjectID(ctx.params.customer_id),
+          },
+        };
+
+        const res = await this.adapter.count(params);
+
+        return res;
       },
     },
     updateStatus: {
       async handler(ctx) {
         try {
           if (!ctx.meta.user) {
-            return new MoleculerError('Unauthorized', 401);
+            return "Unauthorized";
           }
+          const payload = JSON.parse(Object.keys(ctx.params)[0]);
 
-          const { order_id, status } = ctx.params;
+          const { order_id, status } = payload;
 
           const { role, user_id } = ctx.meta.user;
 
           const order = await this.getById(new ObjectID(order_id));
 
           if (!order) {
-            return apiResponse.badRequestResponse(res, 'Order not exists');
+            return apiResponse.badRequestResponse(res, "Order not exists");
           }
 
           switch (role) {
@@ -125,12 +262,53 @@ module.exports = {
           });
 
           if (!result) {
-            return apiResponse.ErrorResponse('Update failed');
+            return apiResponse.ErrorResponse("Update failed");
           }
-          return apiResponse.successResponse('Success');
+          return apiResponse.successResponse("Success");
         } catch (err) {
-          console.log('errrxx', err);
-          return apiResponse.ErrorResponse('Cannot update order');
+          console.log("errrxx", err);
+          return apiResponse.ErrorResponse("Cannot update order");
+        }
+      },
+    },
+
+    getNewOrderByShipper: {
+      async handler(ctx) {
+        try {
+          if (!ctx.meta.user || !ctx.meta.user.user_id) {
+            return "Unauthorized";
+          }
+          const shipper_id = ctx.meta.user.user_id;
+          const queries = {
+            status: "1",
+            shipper_id: new ObjectID(shipper_id),
+          };
+
+          Object.keys(queries).forEach((x) => {
+            if (
+              queries[x] === null ||
+              queries[x] === undefined ||
+              queries[x] == "all"
+            ) {
+              delete queries[x];
+            }
+          });
+
+          let data = await this.adapter.find({
+            query: queries,
+          });
+          if (data && data.length > 0) {
+            // const rs = await ctx.call("orders.getDetailByShipper", {
+            //   id: data[0]._id,
+            // });
+
+            return apiResponse.successResponseWithData("success", data[0]);
+          } else {
+            return apiResponse.successResponseWithData("no_data", null);
+          }
+        } catch (err) {
+          console.log("errrxx", err);
+          return apiResponse.ErrorResponse("Cannot get order");
         }
       },
     },
@@ -139,7 +317,7 @@ module.exports = {
       async handler(ctx) {
         try {
           if (!ctx.meta.user) {
-            return new MoleculerError('Unauthorized', 401);
+            return new MoleculerError("Unauthorized", 401);
           }
 
           const { user_id } = ctx.meta.user;
@@ -147,12 +325,12 @@ module.exports = {
           const { items, payment_id } = ctx.params;
           const products = [];
 
-          const { data: payment } = await ctx.call('payment.getByPaymentID', {
+          const { data: payment } = await ctx.call("payment.getByPaymentID", {
             payment_id,
           });
 
           for (const item of items) {
-            const { data: product } = await ctx.call('products.get', {
+            const { data: product } = await ctx.call("products.get", {
               id: item.id,
             });
             console.log(product);
@@ -192,7 +370,7 @@ module.exports = {
             order.total_cost += product.unit_price;
             order.total_product++;
 
-            await ctx.call('products.subInventory', {
+            await ctx.call("products.subInventory", {
               productID: product._id,
               productQuantity: product.quantity,
             });
@@ -200,16 +378,17 @@ module.exports = {
 
           const orderRes = await this.adapter.insert(order);
           if (!orderRes) {
-            return apiResponse.ErrorResponse('Created Failed');
+            return apiResponse.ErrorResponse("Created Failed");
           }
 
-          return apiResponse.successResponseWithData('success', orderRes);
+          return apiResponse.successResponseWithData("success", orderRes);
         } catch (err) {
           return apiResponse.ErrorResponse(err);
         }
       },
     },
   },
+
   /**
    * Events
    */

@@ -76,8 +76,17 @@ module.exports = {
           totalItems
         );
       },
+    getByIds: {
+      async handler(ctx) {
+
+        const ids = ctx.params;
+        let data = await this.adapter.find();
+        
+        return data.filter(x => ids.includes(`${x._id}`))
+      },
     },
   },
+},
 
   /**
    * Events

@@ -63,8 +63,52 @@ module.exports = {
         return apiResponse.badRequestResponse('Not exists');
       },
     },
-    getAll: {
-      async handler(ctx) {},
+    list: {
+      params: {
+        limit: { type: "number", optional: true, convert: true },
+        offset: { type: "number", optional: true, convert: true },
+      },
+      async handler(ctx) {
+        const limit = ctx.params.limit ? Number(ctx.params.limit) : 20;
+        const offset = ctx.params.offset ? Number(ctx.params.offset) : 0;
+
+        let params = {
+          limit,
+          offset,
+          sort: ["-created_at"],
+        };
+        let countParams;
+
+        countParams = Object.assign({}, params);
+        // Remove pagination params
+        if (countParams && countParams.limit) countParams.limit = null;
+        if (countParams && countParams.offset) countParams.offset = null;
+
+        const res = await this.Promise.all([
+          // Get rows
+          this.adapter.find(params),
+
+          // Get count of all rows
+          this.adapter.count(countParams),
+        ]);
+
+        const docs = await this.transformDocuments(ctx, params, res[0]);
+        const r = await this.transformResult(ctx, docs);
+        r.customerCount = res[1];
+        if (r.customerCount > 0) {
+          return apiResponse.successResponseWithData("success", r);
+        }
+        return apiResponse.badRequestResponse("Not exists");
+      },
+    },
+    getById: {
+      async handler(ctx) {
+        let data = await this.getById(new ObjectID(ctx.params.id));
+
+        if (data) {
+          return data;
+        }
+      },
     },
     getInfo: {
       async handler(ctx) {
@@ -119,7 +163,42 @@ module.exports = {
   /**
    * Methods
    */
-  methods: {},
+  methods: {
+    /**
+     * Transform the result entities to follow the RealWorld API spec
+     *
+     * @param {Context} ctx
+     * @param {Array} entities
+     * @param {Object} user - Logged in user
+     */
+    async transformResult(ctx, entities) {
+      if (Array.isArray(entities)) {
+        const customers = await this.Promise.all(
+          entities.map((item) => this.transformEntity(ctx, item))
+        );
+        return { customers };
+      } else {
+        const customer = await this.transformEntity(ctx, entities);
+        return { customer };
+      }
+    },
+
+    /**
+     * Transform a result entity to follow the RealWorld API spec
+     *
+     * @param {Context} ctx
+     * @param {Object} entity
+     * @param {Object} user - Logged in user
+     */
+    async transformEntity(ctx, entity) {
+      if (!entity) return this.Promise.resolve();
+      const res = await ctx.call("orders.getCountByCustomerId", {
+        customer_id: entity._id.toString(),
+      });
+      entity.totalOrders = res;
+      return entity;
+    },
+  },
 
   /**
    * Service created lifecycle event handler

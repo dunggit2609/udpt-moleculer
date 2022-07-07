@@ -20,19 +20,20 @@ module.exports = {
    */
   settings: {
     fields: [
-      '_id',
-      'name',
-      'description',
-      'business_cert',
-      'bank_account',
-      'work_zone',
-      'email',
-      'phone',
-      'review',
-      'location',
-      'user_id',
-      'created_at',
-      'updated_at',
+      "_id",
+      "name",
+      "description",
+      "business_cert",
+      "bank_account",
+      "work_zone",
+      "email",
+      "phone",
+      "review",
+      "location",
+      "user_id",
+      "created_at",
+      "updated_at",
+      "isActive",
     ],
   },
 
@@ -66,8 +67,64 @@ module.exports = {
       },
     },
 
-    getAll: {
-      async handler(ctx) {},
+    list: {
+      params: {
+        limit: { type: "number", optional: true, convert: true },
+        offset: { type: "number", optional: true, convert: true },
+      },
+      async handler(ctx) {
+        const limit = ctx.params.limit ? Number(ctx.params.limit) : 20;
+        const offset = ctx.params.offset ? Number(ctx.params.offset) : 0;
+
+        let params = {
+          limit,
+          offset,
+          sort: ["-created_at"],
+        };
+        let countParams;
+
+        countParams = Object.assign({}, params);
+        // Remove pagination params
+        if (countParams && countParams.limit) countParams.limit = null;
+        if (countParams && countParams.offset) countParams.offset = null;
+
+        const res = await this.Promise.all([
+          // Get rows
+          this.adapter.find(params),
+
+          // Get count of all rows
+          this.adapter.count(countParams),
+        ]);
+
+        const docs = await this.transformDocuments(ctx, params, res[0]);
+        const result = {
+          shops: docs,
+          shopCount: res[1],
+        };
+
+        if (result.shopCount > 0) {
+          return apiResponse.successResponseWithData("success", result);
+        }
+        return apiResponse.badRequestResponse("Not exists");
+      },
+    },
+    getById: {
+      async handler(ctx) {
+        let data = await this.getById(new ObjectID(ctx.params.id));
+
+        if (data) {
+          return data;
+        }
+      },
+    },
+    verifyBusinessCert: {
+      async handler(ctx) {
+        let data = await this.getById(new ObjectID(ctx.params.id));
+
+        if (data) {
+          return data;
+        }
+      },
     },
 
     create: {
