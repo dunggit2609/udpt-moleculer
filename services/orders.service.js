@@ -98,11 +98,8 @@ module.exports = {
       async handler(ctx) {
         try {
           if (!ctx.meta.user || !ctx.meta.user.user_id) {
-            return;
+            return "Unauthorized";
           }
-          // const payload = JSON.parse(Object.keys(ctx.params)[0]);
-
-          // const { page, size, status, order_id, from, to } = payload;
           const shipper_id = ctx.meta.user.user_id;
           const queries = {
             status: "2",
@@ -128,7 +125,6 @@ module.exports = {
               id: data[0]._id,
             });
 
-            console.log("zxc", rs);
             if (!rs.success) {
               return apiResponse.successResponseWithData("no_data", null);
             }
@@ -147,7 +143,7 @@ module.exports = {
       async handler(ctx) {
         try {
           if (!ctx.meta.user || !ctx.meta.user.user_id) {
-            return;
+            return "Unauthorized";
           }
           const payload = JSON.parse(Object.keys(ctx.params)[0]);
 
@@ -239,10 +235,11 @@ module.exports = {
       async handler(ctx) {
         try {
           if (!ctx.meta.user) {
-            return new MoleculerError("Unauthorized", 401);
+            return "Unauthorized";
           }
+          const payload = JSON.parse(Object.keys(ctx.params)[0]);
 
-          const { order_id, status } = ctx.params;
+          const { order_id, status } = payload;
 
           const { role, user_id } = ctx.meta.user;
 
@@ -271,6 +268,47 @@ module.exports = {
         } catch (err) {
           console.log("errrxx", err);
           return apiResponse.ErrorResponse("Cannot update order");
+        }
+      },
+    },
+
+    getNewOrderByShipper: {
+      async handler(ctx) {
+        try {
+          if (!ctx.meta.user || !ctx.meta.user.user_id) {
+            return "Unauthorized";
+          }
+          const shipper_id = ctx.meta.user.user_id;
+          const queries = {
+            status: "1",
+            shipper_id: new ObjectID(shipper_id),
+          };
+
+          Object.keys(queries).forEach((x) => {
+            if (
+              queries[x] === null ||
+              queries[x] === undefined ||
+              queries[x] == "all"
+            ) {
+              delete queries[x];
+            }
+          });
+
+          let data = await this.adapter.find({
+            query: queries,
+          });
+          if (data && data.length > 0) {
+            // const rs = await ctx.call("orders.getDetailByShipper", {
+            //   id: data[0]._id,
+            // });
+
+            return apiResponse.successResponseWithData("success", data[0]);
+          } else {
+            return apiResponse.successResponseWithData("no_data", null);
+          }
+        } catch (err) {
+          console.log("errrxx", err);
+          return apiResponse.ErrorResponse("Cannot get order");
         }
       },
     },

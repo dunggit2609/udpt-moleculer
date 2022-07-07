@@ -38,6 +38,7 @@ module.exports = {
           "GET /shippers": "shippers.list",
 
           "GET /customers": "customers.list",
+          "POST /shippers/getHealthHistory": "shippers.getHealthHistory",
 
           "POST /users/register": "users.register",
           "POST /users/login": "users.login",
@@ -46,6 +47,7 @@ module.exports = {
           "GET /orders/getDetailByShipper": "orders.getDetailByShipper",
           "GET /orders/getDeliveringOrderByShipper":
             "orders.getDeliveringOrderByShipper",
+          "GET /orders/getNewOrderByShipper": "orders.getNewOrderByShipper",
           "POST /orders/update-status": "orders.updateStatus",
 
           "GET /reviews/get/:id": "reviews.get",
