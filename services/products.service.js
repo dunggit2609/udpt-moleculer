@@ -45,18 +45,14 @@ module.exports = {
    * Actions
    */
   actions: {
-    // get: {
-    //   async handler(ctx) {
-    //     let data = await this.getById(new ObjectID(ctx.params.id));
-    //     data = JSON.parse(JSON.stringify(data));
-    //     if (data) {
-    //       return apiResponse.successResponseWithData('success', data);
-    //     }
+    getByIds: {
+      async handler(ctx) {
+        const ids = ctx.params;
+        let data = await this.adapter.find();
 
-    // 		return apiResponse.badRequestResponse('Not exists');
-    // 	}
-    // },
-
+        return data.filter((x) => ids.includes(`${x._id}`));
+      },
+    },
     getAll: {
       async handler(ctx) {
         let data = await this.adapter.find();
@@ -176,14 +172,7 @@ module.exports = {
           totalItems
         );
       },
-      getByIds: {
-        async handler(ctx) {
-          const ids = ctx.params;
-          let data = await this.adapter.find();
-
-          return data.filter((x) => ids.includes(`${x._id}`));
-        },
-      },
+    
     },
   },
 

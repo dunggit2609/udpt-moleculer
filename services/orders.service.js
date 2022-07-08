@@ -59,8 +59,8 @@ module.exports = {
 
         const productIds = data.product.map((x) => x.product_id);
         const products = await ctx.call("products.getByIds", productIds);
+        data.products = [];
         if (products.length > 0) {
-          data.products = [];
           data.product.forEach((x) => {
             const product = products.find(
               (y) => `${y._id}` === `${x.product_id}`
@@ -87,11 +87,11 @@ module.exports = {
           data.shop_info = shop;
         }
 
-        if (data) {
+        if (data && data.customer_info ) {
           return apiResponse.successResponseWithData("success", data);
         }
 
-        return apiResponse.badRequestResponse("Not exists");
+        return apiResponse.successResponseWithData("Not exists", null);
       },
     },
     getDeliveringOrderByShipper: {
@@ -297,10 +297,8 @@ module.exports = {
           let data = await this.adapter.find({
             query: queries,
           });
+          console.log("zxc", data)
           if (data && data.length > 0) {
-            // const rs = await ctx.call("orders.getDetailByShipper", {
-            //   id: data[0]._id,
-            // });
 
             return apiResponse.successResponseWithData("success", data[0]);
           } else {

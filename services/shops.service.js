@@ -51,6 +51,15 @@ module.exports = {
    * Actions
    */
   actions: {
+    getById: {
+      async handler(ctx) {
+        let data = await this.getById(new ObjectID(ctx.params.id));
+
+        if (data) {
+          return data;
+        }
+      },
+    },
     getByUserId: {
       async handler(ctx) {
         let data = await this.adapter.find({
