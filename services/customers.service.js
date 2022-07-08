@@ -67,14 +67,16 @@ module.exports = {
       params: {
         limit: { type: "number", optional: true, convert: true },
         offset: { type: "number", optional: true, convert: true },
+        search: { type: "string", optional: true, convert: true },
       },
       async handler(ctx) {
         const limit = ctx.params.limit ? Number(ctx.params.limit) : 20;
         const offset = ctx.params.offset ? Number(ctx.params.offset) : 0;
-
+        const search = ctx.params.search ?? '';
         let params = {
           limit,
           offset,
+          search,
           sort: ["-created_at"],
         };
         let countParams;
