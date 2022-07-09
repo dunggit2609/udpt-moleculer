@@ -98,9 +98,9 @@ module.exports = {
         const r = await this.transformResult(ctx, docs);
         r.customerCount = res[1];
         if (r.customerCount > 0) {
-          return apiResponse.successResponseWithData("success", r);
+          return apiResponse.successResponseWithData('success', r);
         }
-        return apiResponse.badRequestResponse("Not exists");
+        return apiResponse.badRequestResponse('Not exists');
       },
     },
     getById: {
@@ -142,16 +142,41 @@ module.exports = {
     },
     updateAddress: {
       async handler(ctx) {
-        const user_id = ctx.meta.user;
+        const { user_id } = ctx.meta.user;
 
         console.log(user_id);
         try {
           if (!ctx.meta.user) {
-            return new MoleculerError('Unauthorized', 401);
+            return new apiResponse.unauthorizedResponse('Unauthorized');
+          }
+          const { address, phone } = ctx.params;
+          const payload = { address, phone, updated_at: new Date() };
+          const customer = this.adapter.updateById(
+            user_id,
+            { $set: payload },
+            { new: true }
+          );
+          if (!customer) {
+            return apiResponse.ErrorResponse('Updated Failed');
+          } else {
+            return apiResponse.successResponseWithData('Success', customer);
           }
         } catch (err) {
           console.log('err', err);
           return apiResponse.ErrorResponse('Update failed');
+        }
+      },
+    },
+    getCurrentUser: {
+      async handler(ctx) {
+        const { user_id } = ctx.meta.user;
+        if (!user_id) {
+          return apiResponse.unauthorizedResponse('Unauthorized');
+        }
+        let data = await this.getById(new ObjectID(user_id));
+
+        if (data) {
+          return apiResponse.successResponseWithData('Success', data);
         }
       },
     },
@@ -194,7 +219,7 @@ module.exports = {
      */
     async transformEntity(ctx, entity) {
       if (!entity) return this.Promise.resolve();
-      const res = await ctx.call("orders.getCountByCustomerId", {
+      const res = await ctx.call('orders.getCountByCustomerId', {
         customer_id: entity._id.toString(),
       });
       entity.totalOrders = res;
