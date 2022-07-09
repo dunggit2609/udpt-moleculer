@@ -131,6 +131,36 @@ module.exports = {
 		}
 	},
 
+	getAllByShop: {
+		async handler(ctx) {
+			try {
+				const { page, size, status } = ctx.params;
+				const shop_id = ctx.meta.user.user_id;
+				console.log(shop_id);
+				const queries = {
+					status: status,
+					shop_id: new ObjectID(shop_id)
+				};
+
+				Object.keys(queries).forEach((x) => {
+					if (queries[x] === null || queries[x] === undefined) {
+						delete queries[x];
+					}
+				});
+
+				const data = await this.adapter.find({
+					query: queries
+				});
+
+				const { response, totalItems } = getPagingData(data, page, size);
+				return apiResponse.successResponseWithPagingData('success', response, page, totalItems);
+			} catch (err) {
+				console.log('errrxx', err);
+				return apiResponse.ErrorResponse('Cannot get order');
+			}
+		}
+	},
+
 	/**
    * Events
    */
