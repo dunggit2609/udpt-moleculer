@@ -80,33 +80,29 @@ module.exports = {
 					'PUT /product/update': 'products.update',
 					'GET /product/getAll': 'products.getAll',
 					'GET /product/getAllProductByShop': 'products.getAllProductByShop',
+					'GET /product/getProductByShop': 'products.getProductByShop',
 
-					'GET /productCategory/getAll': 'productCategories.getAll'
-        },
-        onBeforeCall(ctx, route, req, res) {
-          let accessToken = req.headers["authorization"];
-          if (!accessToken) {
-            // res.writeHead(401);
-            //  res.end("Unauthorized");
-          }
-
-          var decoded = jwt.decode(accessToken);
-
-          if (!decoded || !decoded.role || !decoded.user_id) {
-            // res.writeHead(401);
-            //  res.end("Unauthorized");
-            return;
-          }
-          //user_id nay la id cua tung role, vd role shipper
-          //thi user_id nay la shipper_id chu khong phai user_id trong bang user
-          ctx.meta.user = { role: decoded.role, user_id: decoded.user_id };
-        },
-
-        bodyParsers: {
-          json: true,
-          urlencoded: { extended: true },
-        },
-      },
-    ],
-  },
+					'GET /productCategory/getAll': 'productCategories.getAll',
+					'GET /productCategory/get/:id': 'productCategories.get'
+				},
+				onBeforeCall(ctx, route, req, res) {
+					let accessToken = req.headers['authorization'];
+					if (accessToken) {
+						var decoded = jwt.decode(accessToken);
+						console.log(accessToken);
+						console.log(decoded);
+						//user_id nay la id cua tung role, vd role shipper
+						//thi user_id nay la shipper_id chu khong phai user_id trong bang user
+						ctx.meta.user = { role: decoded.role, user_id: decoded.user_id };
+					} else {
+						return 'Unauthorized';
+					}
+				},
+				bodyParsers: {
+					json: true,
+					urlencoded: { extended: true }
+				}
+			}
+		]
+	}
 };
