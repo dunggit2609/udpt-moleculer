@@ -2,231 +2,260 @@
 
 const DbService = require('moleculer-db');
 
-const getPagingData = require('../helpers/pagingData');
-var apiResponse = require('../helpers/apiResponse');
-const MongoDBAdapter = require('moleculer-db-adapter-mongo');
-const { ObjectID } = require('bson');
-
+const getPagingData = require("../helpers/pagingData");
+var apiResponse = require("../helpers/apiResponse");
+const MongoDBAdapter = require("moleculer-db-adapter-mongo");
+const { ObjectID } = require("bson");
+const {format} = require("date-fns")
 module.exports = {
-	name: 'shippers',
-	mixins: [ DbService ],
-	adapter: new MongoDBAdapter(
-		'mongodb+srv://thangbach:123@cluster0.msdkr.mongodb.net/Shipper?retryWrites=true&w=majority',
-		{ useUnifiedTopology: true }
-	),
-	collection: 'Shipper',
-	/**
+  name: 'shippers',
+  mixins: [DbService],
+  adapter: new MongoDBAdapter(
+    'mongodb+srv://admin1:123@cluster0.msdkr.mongodb.net/Shipper?retryWrites=true&w=majority',
+    { useUnifiedTopology: true }
+  ),
+  collection: 'Shipper',
+  /**
    * Service settings
    */
-	settings: {
-		fields: [
-			'_id',
-			'full_name',
-			'address',
-			'identity',
-			'bank_account',
-			'work_zone',
-			'email',
-			'phone',
-			'user_id',
-			'created_at',
-			'updated_at',
-			'register_at',
-			'working_info',
-			'checking_result',
-			'canReceiveOrder'
-		]
-	},
+  settings: {
+    fields: [
+      '_id',
+      'full_name',
+      'address',
+      'identity',
+      'bank_account',
+      'work_zone',
+      'email',
+      'phone',
+      'user_id',
+      'created_at',
+      'updated_at',
+      'register_at',
+      'working_info',
+      'checking_result',
+      'canReceiveOrder',
+    ],
+  },
 
-	/**
+  /**
    * Service metadata
    */
-	metadata: {},
+  metadata: {},
 
-	/**
+  /**
    * Service dependencies
    */
-	//dependencies: [],
+  //dependencies: [],
 
-	/**
+  /**
    * Actions
    */
-	actions: {
-		// list: {
-		// 	async handler(ctx) {
-		// 		const { keyword, page, size } = ctx.params;
-		// 		let query = "SELECT * FROM Players WHERE  '$keyword' = '' or  `FULLNAME` like '%$keyword%'  or `NUMBER` like '%$keyword%'   or `NATIONALITY` like '%$keyword%' or `POSITION` like  '%$keyword%'";
-		// 		query = query.replaceAll("$keyword", keyword ? keyword : "")
+  actions: {
+  
+    getByUserId: {
+      async handler(ctx) {
+        let data = await this.adapter.find({
+          query: { user_id: new ObjectID(ctx.params.id) },
+        });
 
-		// 		let data = await this.adapter.db.query(query)
+        if (data && data.length > 0) {
+          return ctx.params.internal
+            ? data[0]
+            : apiResponse.successResponseWithData('success', data[0]);
+        }
 
-		// 		data = JSON.parse(JSON.stringify(data))
-		// 		data = data.length > 0 ? data[0] : []
-		// 		const { totalItems, response } = getPagingData(data, page, size)
-		// 		return { totalItems: totalItems, page: page ? page : 1, size: size ? size : 10, data: response };
-		// 	}
-		// },
-		// advancedSearch: {
-		// 	async handler(ctx) {
-		// 		const payload = JSON.parse(Object.keys(ctx.params)[0])
-		// 		const { ClubID, Position, FullName, Nationality, Number, page, size } = payload;
-		// 		const queries = {
-		// 			ClubID: ClubID,
-		// 			Position: Position, FullName: FullName, Nationality: Nationality, Number: Number,
-		// 		};
+        return apiResponse.badRequestResponse('Not exists');
+      },
+    },
+    getInfo: {
+      async handler(ctx) {
+        let data = await this.getById(new ObjectID(ctx.meta.user.user_id));
 
-		// 		Object.keys(queries).forEach(x => {
-		// 			if (queries[x] === null || queries[x] === undefined) {
-		// 				queries[x] = '';
-		// 			}
-		// 		});
-		// 		let query = "SELECT * FROM Players WHERE ('$clubID' = 'all' or '$clubID' = ClubID or '$clubID' = '') and ( '$name' = '' or  `FullName` like '%$name%' ) and ('$number' = '' or `Number` like '%$number%'  ) and ('$nationality' = '' or `Nationality` like '%$nationality%' ) and ('$position' = '' or `Position` like '%$position%' )";
+        if (data) {
+          return apiResponse.successResponseWithData('success', data);
+        }
 
-		// 		query = query.replaceAll("$clubID", queries.ClubID)
-		// 			.replaceAll("$name", queries.FullName)
-		// 			.replaceAll("$number", queries.Number)
-		// 			.replaceAll("$nationality", queries.Nationality)
-		// 			.replaceAll("$position", queries.Position)
+        return apiResponse.badRequestResponse('Not exists');
+      },
+    },
+    updateHealth: {
+      async handler(ctx) {
+        if (!ctx.meta.user || !ctx.meta.user.user_id) {
+          return;
+        }
+        
+        const payload = JSON.parse(Object.keys(ctx.params)[0]);
+        const shipper_id = ctx.meta.user.user_id;
+        try {
+          const shipper = await this.getById(new ObjectID(shipper_id));
+          const newShipper = Object.assign({}, shipper);
+          newShipper.working_info.push(payload);
 
-		// 		let data = await this.adapter.db.query(query);
-		// 		data = JSON.parse(JSON.stringify(data))
-		// 		data = data.length > 0 ? data[0] : []
 
-		// 		const { response, totalItems } = getPagingData(data, +page, +size)
-		// 		return { totalItems: totalItems, page: page ? page : 1, size: size ? size : 10, data: response };
-		// 	}
-		// },
-		getByUserId: {
-			async handler(ctx) {
-				let data = await this.adapter.find({
-					query: { user_id: new ObjectID(ctx.params.id) }
-				});
+          const result = await this._update(new ObjectID(shipper_id), newShipper);
+          if (!result) {
+            return apiResponse.ErrorResponse('Update failed');
+          }
+          return apiResponse.successResponse('Success');
+        } catch (err) {
+          console.log("err", err);
+          return apiResponse.ErrorResponse("Cannot update health");
+        }
+      },
+    },
+    list: {
+      params: {
+        limit: { type: "number", optional: true, convert: true },
+        offset: { type: "number", optional: true, convert: true },
+      },
+      async handler(ctx) {
+        const limit = ctx.params.limit ? Number(ctx.params.limit) : 20;
+        const offset = ctx.params.offset ? Number(ctx.params.offset) : 0;
 
-				if (data && data.length > 0) {
-					return ctx.params.internal ? data[0] : apiResponse.successResponseWithData('success', data[0]);
-				}
+        let params = {
+          limit,
+          offset,
+          sort: ["-created_at"],
+          populate: ["orders"],
+        };
+        let countParams;
 
-				return apiResponse.badRequestResponse('Not exists');
-			}
-		},
-		getInfo: {
-			async handler(ctx) {
-				let data = await this.getById(new ObjectID(ctx.meta.user.user_id));
+        countParams = Object.assign({}, params);
+        // Remove pagination params
+        if (countParams && countParams.limit) countParams.limit = null;
+        if (countParams && countParams.offset) countParams.offset = null;
 
-				if (data) {
-					return apiResponse.successResponseWithData('success', data);
-				}
+        const res = await this.Promise.all([
+          // Get rows
+          this.adapter.find(params),
 
-				return apiResponse.badRequestResponse('Not exists');
-			}
-		},
-		updateHealth: {
-			async handler(ctx) {
-				const shipper_id = ctx.meta.user.user_id;
-				console.log('shipper_id: ', shipper_id);
-				const payload = ctx.params;
-				console.log(payload);
-				try {
-					const shipper = await this.getById(new ObjectID(shipper_id));
-					console.log(shipper);
-					const newShipper = Object.assign({}, shipper);
-					console.log(newShipper);
-					newShipper.working_info.push(payload);
+          // Get count of all rows
+          this.adapter.count(countParams),
+        ]);
 
-					const result = await this._update(new ObjectID(shipper_id), newShipper);
+        const docs = await this.transformDocuments(ctx, params, res[0]);
+        const r = await this.transformResult(ctx, docs);
+        r.shipperCount = res[1];
+        if (r.shipperCount > 0) {
+          return apiResponse.successResponseWithData("success", r);
+        }
+        return apiResponse.badRequestResponse("Not exists");
+      },
+    },
+    getHealthHistory: {
+      async handler(ctx) {
+        try {
+          if (!ctx.meta.user || !ctx.meta.user.user_id) {
+            return;
+          }
+          const payload = JSON.parse(Object.keys(ctx.params)[0]);
 
-					if (!result) {
-						return apiResponse.ErrorResponse('Update failed');
-					}
-					return apiResponse.successResponse('Success');
-				} catch (err) {
-					console.log('err', err);
-					return apiResponse.ErrorResponse('Cannot update health');
-				}
-			}
-		}
-		// create: {
-		// 	async handler(ctx) {
-		// 		let params = JSON.parse(Object.keys(ctx.params)[0]);
-		// 		let count = await this.adapter.find();
-		// 		count = JSON.parse(JSON.stringify(count)).sort((a, b) => b.id - a.id)
+          const { page, size, from, to } = payload;
 
-		// 		if (count.length > 0) {
-		// 			count = count[0].id
-		// 		}
+          const shipper_id = ctx.meta.user.user_id;
+          const shipper = await this.getById(new ObjectID(shipper_id))
 
-		// 		if (count) {
-		// 			params.id = count + 1;
-		// 		}
+          let heathHistory = []
+          if (shipper) {
+            heathHistory = shipper.working_info
+          }
 
-		// 		let data = await this.adapter.insert(params)
-		// 		data = JSON.parse(JSON.stringify(data))
+          const fromDate = from
+            ? new Date(
+                format(
+                  typeof from === "string" ? new Date(from) : from,
+                  "yyyy-MM-dd"
+                )
+              )
+            : null;
+          const toDate = to
+            ? new Date(
+                format(typeof to === "string" ? new Date(to) : to, "yyyy-MM-dd")
+              )
+            : null;
 
-		// 		if (data) {
-		// 			return { success: true, data: data }
-		// 		}
+          heathHistory = heathHistory.filter((x) => {
+            return (
+              (!fromDate ||
+                new Date(format(typeof x.date === "string" ? new Date(x.date) : x.date, "yyyy-MM-dd")) >= fromDate) &&
+              (!toDate ||
+                new Date(format(typeof x.date === "string" ? new Date(x.date) : x.date, "yyyy-MM-dd")) <= toDate)
+            );
+          });
+          const { response, totalItems } = getPagingData(heathHistory, page, size);
+          return apiResponse.successResponseWithPagingData(
+            "success",
+            response,
+            page,
+            totalItems
+          );
+        } catch (err) {
+          console.log("errrxx", err);
+          return apiResponse.ErrorResponse("Cannot get order");
+        }
+      }
+    }
+   
+  },
 
-		// 		return { success: false, data: {} }
-		// 	}
-		// },
-		// updatePlayer: {
-		// 	async handler(ctx) {
-		// 		let params = JSON.parse(Object.keys(ctx.params)[0]);
-		// 		let query = "UPDATE `PLAYERS` SET `FullName` = '$name', `Position` = '$position', `Number` = '$number', `Nationality` = '$nationality' where `id` = '$id'";
-		// 		query = query.replace("$name", params.FullName)
-		// 			.replace("$position", params.Position)
-		// 			.replace("$number", params.Number)
-		// 			.replace("$nationality", params.Nationality)
-		// 			.replace("$id", +params.id)
-		// 		let data = await this.adapter.db.query(query)
-
-		// 		data = JSON.parse(JSON.stringify(data))
-
-		// 		// await this.broker.stop()
-		// 		if (data) {
-		// 			return { success: true }
-		// 		}
-
-		// 		return { success: false }
-		// 	}
-		// },
-		// delete: {
-		// 	async handler(ctx) {
-
-		// 		let data = await this.adapter.remove(ctx.params.id)
-
-		// 		data = JSON.parse(JSON.stringify(data))
-		// 		if (data.length > 0) {
-		// 			return { success: true, data: data[0] }
-		// 		}
-
-		// 		return { success: false, data: {} }
-		// 	}
-		// }
-	},
-
-	/**
+  /**
    * Events
    */
-	events: {},
+  events: {},
 
-	/**
+  /**
    * Methods
    */
-	methods: {},
+  methods: {
+    /**
+     * Transform the result entities to follow the RealWorld API spec
+     *
+     * @param {Context} ctx
+     * @param {Array} entities
+     * @param {Object} user - Logged in user
+     */
+    async transformResult(ctx, entities) {
+      if (Array.isArray(entities)) {
+        const shippers = await this.Promise.all(
+          entities.map((item) => this.transformEntity(ctx, item))
+        );
+        return { shippers };
+      } else {
+        const shipper = await this.transformEntity(ctx, entities);
+        return { shipper };
+      }
+    },
 
-	/**
+    /**
+     * Transform a result entity to follow the RealWorld API spec
+     *
+     * @param {Context} ctx
+     * @param {Object} entity
+     * @param {Object} user - Logged in user
+     */
+    async transformEntity(ctx, entity) {
+      if (!entity) return this.Promise.resolve();
+      const res = await ctx.call("orders.getCountByShipperId", {
+        shipper_id: entity._id.toString(),
+      });
+      entity.totalOrders = res;
+      return entity;
+    },
+  },
+
+  /**
    * Service created lifecycle event handler
    */
-	created() {},
+  created() {},
 
-	/**
+  /**
    * Service started lifecycle event handler
    */
-	started() {},
+  started() {},
 
-	/**
+  /**
    * Service stopped lifecycle event handler
    */
-	stopped() {}
+  stopped() {},
 };
