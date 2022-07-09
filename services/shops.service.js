@@ -79,14 +79,17 @@ module.exports = {
       params: {
         limit: { type: "number", optional: true, convert: true },
         offset: { type: "number", optional: true, convert: true },
+        search: { type: "string", optional: true, convert: true },
       },
       async handler(ctx) {
         const limit = ctx.params.limit ? Number(ctx.params.limit) : 20;
         const offset = ctx.params.offset ? Number(ctx.params.offset) : 0;
-
+        const search = ctx.params.search ?? '';
+        console.log(search)
         let params = {
           limit,
           offset,
+          search,
           sort: ["-created_at"],
         };
         let countParams;
@@ -115,6 +118,26 @@ module.exports = {
         }
         return apiResponse.badRequestResponse("Not exists");
       },
+    },
+    updateShopStatus: {
+      params: {
+        id: {type: "string"},
+      },
+      async handler(ctx) {
+        const newData = {
+          isActive: true,
+        }
+        const update = {
+          $set: newData,
+        }
+        const doc = await this.adapter.updateById(ctx.params.id, update);
+
+        await this.entityChanged("updated", doc, ctx);
+        if (doc) {
+          return apiResponse.successResponseWithData("success", doc);
+        }
+        return apiResponse.badRequestResponse("update fail");
+      }
     },
 
 		getAll: {

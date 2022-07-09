@@ -57,7 +57,8 @@ module.exports = {
           'PUT /reviews/update/:id': 'reviews.update',
           'PUT /reviews/reply/:id': 'reviews.reply',
 
-          'GET /shops': 'shops.list',
+          "GET /shops": "shops.list",
+          "PUT /shops/update-status/:id": "shops.updateShopStatus",
 
           'POST /orders': 'orders.createOrder',
 
