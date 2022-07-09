@@ -53,17 +53,6 @@ module.exports = {
         return data.filter((x) => ids.includes(`${x._id}`));
       },
     },
-    get: {
-			async handler(ctx) {
-				let data = await this.getById(new ObjectID(ctx.params.id));
-				data = JSON.parse(JSON.stringify(data));
-				if (data) {
-					return apiResponse.successResponseWithData('success', data);
-				}
-
-				return apiResponse.badRequestResponse('Not exists');
-			}
-		},
     getAll: {
       async handler(ctx) {
         let data = await this.adapter.find();
@@ -107,18 +96,6 @@ module.exports = {
       },
     
     },
-    get: {
-			async handler(ctx) {
-				let data = await this.getById(new ObjectID(ctx.params.id));
-				data = JSON.parse(JSON.stringify(data));
-				if (data) {
-					return apiResponse.successResponseWithData('success', data);
-				}
-
-				return apiResponse.badRequestResponse('Not exists');
-			}
-		},
-
 		getAll: {
 			async handler(ctx) {
 				let data = await this.adapter.find();
