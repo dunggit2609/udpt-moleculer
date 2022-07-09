@@ -67,7 +67,7 @@ module.exports = {
           location,
           business_cert,
           description,
-        } = ctx.params;
+        } = payload;
         try {
           const existedUsername = await this.adapter.find({
             query: { username: username },
