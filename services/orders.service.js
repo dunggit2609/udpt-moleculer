@@ -54,8 +54,16 @@ module.exports = {
   actions: {
     getDetailByShipper: {
       async handler(ctx) {
+        if (!ctx.meta.user || !ctx.meta.user.user_id) {
+          return "Unauthorized";
+        }
+
         let data = await this.getById(new ObjectID(ctx.params.id));
         data = JSON.parse(JSON.stringify(data));
+
+        if (`${data.shipper_id}` !== ctx.meta.user.user_id) {
+          return "Forbidden";
+        }
 
         const productIds = data.product.map((x) => x.product_id);
         const products = await ctx.call("products.getByIds", productIds);
