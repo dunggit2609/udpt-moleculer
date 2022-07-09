@@ -94,8 +94,6 @@ module.exports = {
 					let accessToken = req.headers['authorization'];
 					if (accessToken) {
 						var decoded = jwt.decode(accessToken);
-						console.log(accessToken);
-						console.log(decoded);
 						//user_id nay la id cua tung role, vd role shipper
 						//thi user_id nay la shipper_id chu khong phai user_id trong bang user
 						ctx.meta.user = { role: decoded.role, user_id: decoded.user_id };
