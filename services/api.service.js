@@ -1,10 +1,10 @@
-"use strict";
+'use strict';
 
-const ApiGateway = require("moleculer-web");
-const ApiService = require("moleculer-web");
-const jwt = require("jsonwebtoken");
+const ApiGateway = require('moleculer-web');
+const ApiService = require('moleculer-web');
+const jwt = require('jsonwebtoken');
 module.exports = {
-  name: "api",
+  name: 'api',
   mixins: [ApiGateway, ApiService],
 
   // More info about settings: http://moleculer.services/docs/moleculer-web.html
@@ -12,9 +12,9 @@ module.exports = {
     port: process.env.PORT || 3000,
     cors: {
       // Configures the Access-Control-Allow-Origin CORS header.
-      origin: "http://localhost:8888",
+      origin: 'http://localhost:8888',
       // Configures the Access-Control-Allow-Methods CORS header.
-      methods: ["GET", "OPTIONS", "POST", "PUT", "DELETE"],
+      methods: ['GET', 'OPTIONS', 'POST', 'PUT', 'DELETE'],
       // Configures the Access-Control-Allow-Headers CORS header.
       allowedHeaders: [],
       // Configures the Access-Control-Expose-Headers CORS header.
@@ -26,55 +26,60 @@ module.exports = {
     },
     routes: [
       {
-        path: "/api",
+        path: '/api',
         whitelist: [
           // Access to any actions in all services
-          "*",
+          '*',
         ],
         aliases: {
-          "GET /shippers/:id": "shippers.getByUserId",
-          "POST /shippers/update-health": "shippers.updateHealth",
-          "GET /shippers/get/me": "shippers.getInfo",
-          "GET /shippers": "shippers.list",
+          'GET /shippers/:id': 'shippers.getByUserId',
+          'POST /shippers/update-health': 'shippers.updateHealth',
+          'GET /shippers/get/me': 'shippers.getInfo',
+          'GET /shippers': 'shippers.list',
 
-          "GET /customers": "customers.list",
-          "POST /shippers/getHealthHistory": "shippers.getHealthHistory",
+          'GET /customers': 'customers.list',
+          'POST /shippers/getHealthHistory': 'shippers.getHealthHistory',
 
-          "POST /users/register": "users.register",
-          "POST /users/login": "users.login",
+          'POST /users/register': 'users.register',
+          'POST /users/login': 'users.login',
 
-          "POST /orders/getAllByShipper": "orders.getAllByShipper",
-          "GET /orders/getDetailByShipper": "orders.getDetailByShipper",
-          "GET /orders/getDeliveringOrderByShipper":
-            "orders.getDeliveringOrderByShipper",
-          "GET /orders/getNewOrderByShipper": "orders.getNewOrderByShipper",
-          "POST /orders/update-status": "orders.updateStatus",
+          'POST /orders/getAllByShipper': 'orders.getAllByShipper',
+          'GET /orders/getDetailByShipper': 'orders.getDetailByShipper',
+          'GET /orders/getDeliveringOrderByShipper':
+            'orders.getDeliveringOrderByShipper',
+          'GET /orders/getNewOrderByShipper': 'orders.getNewOrderByShipper',
+          'POST /orders/update-status': 'orders.updateStatus',
 
-          "GET /reviews/get/:id": "reviews.get",
-          "POST /reviews/create": "reviews.create",
-          "GET /reviews/getAll/:productID": "reviews.listByProduct",
-          "GET /reviews": "reviews.list",
-          "PUT /reviews/update/:id": "reviews.update",
-          "PUT /reviews/reply/:id": "reviews.reply",
+          'GET /reviews/get/:id': 'reviews.get',
+          'POST /reviews/create': 'reviews.create',
+          'GET /reviews/getAll/:productID': 'reviews.listByProduct',
+          'GET /reviews': 'reviews.list',
+          'PUT /reviews/update/:id': 'reviews.update',
+          'PUT /reviews/reply/:id': 'reviews.reply',
 
-          "GET /shops": "shops.list",
+          'GET /shops': 'shops.list',
 
-          "POST /orders": "orders.createOrder",
+          'POST /orders': 'orders.createOrder',
 
-          "GET /reviews/:productID": "reviews.getByProductID",
-          "POST /reviews/": "reviews.customerCreate",
+          'GET /reviews/:productID': 'reviews.getByProductID',
+          'POST /reviews/': 'reviews.customerCreate',
 
-          "POST customers/shipping-info": "customers.updateAddress",
+          'GET /customers/me': 'customers.getCurrentUser',
+          'POST customers/shipping-info': 'customers.updateAddress',
 
-          "GET products/search": "products.searchAndFilter",
+          'GET /products/search': 'products.searchAndFilter',
 
+          'POST /shop/create': 'shops.create',
+          'POST /shop/update': 'shops.update',
+          'POST /shop/insertProduct': 'shops.insertProduct',
+          'POST /shop/updateProduct': 'shops.updateProduct',
+          'POST /shop/getOrderById': 'shops.getOrderById',
+          'GET /shop/getAllProduct': 'shops.getAllProduct',
 
-					'POST /shop/create': 'shops.create',
-					'POST /shop/update': 'shops.update',
-					'POST /shop/insertProduct': 'shops.insertProduct',
-					'POST /shop/updateProduct': 'shops.updateProduct',
-					'POST /shop/getOrderById': 'shops.getOrderById',
-					'GET /shop/getAllProduct': 'shops.getAllProduct',
+          'POST /product/create': 'products.create',
+          'PUT /product/update': 'products.update',
+          'GET /product/getAll': 'products.getAll',
+          'GET /product/getAllProductByShop': 'products.getAllProductByShop',
 
 					'POST /product/create': 'products.create',
 					'PUT /product/update': 'products.update',
