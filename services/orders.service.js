@@ -6,7 +6,7 @@ const getPagingData = require('../helpers/pagingData');
 var apiResponse = require('../helpers/apiResponse');
 const MongoDBAdapter = require('moleculer-db-adapter-mongo');
 const { ObjectID } = require('bson');
-const { USER_ROLE_SHIPPER } = require('../constant');
+const { USER_ROLE_SHIPPER, USER_ROLE_SHOP } = require('../constant');
 const { MoleculerError } = require('moleculer').Errors;
 module.exports = {
 	name: 'orders',
@@ -112,6 +112,10 @@ module.exports = {
 							if (!order.shipper_id.equals(user_id)) {
 								return apiResponse.forbiddenResponse();
 							}
+						case USER_ROLE_SHOP:
+							if (!order.shop_id.equals(user_id)) {
+								return apiResponse.forbiddenResponse();
+							}
 					}
 
 					const result = await this._update(new ObjectID(order_id), {
@@ -128,39 +132,73 @@ module.exports = {
 					return apiResponse.ErrorResponse('Cannot update order');
 				}
 			}
-		}
-	},
+		},
 
-	getAllByShop: {
-		async handler(ctx) {
-			try {
-				const { page, size, status } = ctx.params;
-				const shop_id = ctx.meta.user.user_id;
-				console.log(shop_id);
-				const queries = {
-					status: status,
-					shop_id: new ObjectID(shop_id)
-				};
+		getAllByShop: {
+			async handler(ctx) {
+				try {
+					const { page, size, status } = ctx.params;
+					const shop_id = ctx.meta.user.user_id;
+					console.log('shop_id: ', shop_id);
+					const queries = {
+						status: status,
+						shop_id: new ObjectID(shop_id)
+					};
 
-				Object.keys(queries).forEach((x) => {
-					if (queries[x] === null || queries[x] === undefined) {
-						delete queries[x];
+					Object.keys(queries).forEach((x) => {
+						if (queries[x] === null || queries[x] === undefined) {
+							delete queries[x];
+						}
+					});
+					console.log(queries);
+					const data = await this.adapter.find({
+						status: status,
+						shop_id: shop_id
+					});
+					console.log(data);
+					const { response, totalItems } = getPagingData(data, page, size);
+					return apiResponse.successResponseWithPagingData('success', response, page, totalItems);
+				} catch (err) {
+					console.log('errrxx', err);
+					return apiResponse.ErrorResponse('Cannot get order');
+				}
+			}
+		},
+
+		getNewOrderByShop: {
+			async handler(ctx) {
+				try {
+					if (!ctx.meta.user || !ctx.meta.user.user_id) {
+						return 'Unauthorized';
 					}
-				});
+					const shop_id = ctx.meta.user.user_id;
+					const queries = {
+						status: '0',
+						shop_id: new ObjectID(shop_id)
+					};
 
-				const data = await this.adapter.find({
-					query: queries
-				});
-
-				const { response, totalItems } = getPagingData(data, page, size);
-				return apiResponse.successResponseWithPagingData('success', response, page, totalItems);
-			} catch (err) {
-				console.log('errrxx', err);
-				return apiResponse.ErrorResponse('Cannot get order');
+					Object.keys(queries).forEach((x) => {
+						if (queries[x] === null || queries[x] === undefined || queries[x] == 'all') {
+							delete queries[x];
+						}
+					});
+					console.log('queries: ', queries);
+					let data = await this.adapter.find({
+						query: queries
+					});
+					console.log('zxc', data);
+					if (data && data.length > 0) {
+						return apiResponse.successResponseWithData('success', data[0]);
+					} else {
+						return apiResponse.successResponseWithData('no_data', null);
+					}
+				} catch (err) {
+					console.log('errrxx', err);
+					return apiResponse.ErrorResponse('Cannot get order');
+				}
 			}
 		}
 	},
-
 	/**
    * Events
    */

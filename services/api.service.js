@@ -31,6 +31,7 @@ module.exports = {
 					'POST /orders/update-status': 'orders.updateStatus',
 					'GET /orders/get/:id': 'orders.get',
 					'GET /orders/getAllByShop': 'orders.getAllByShop',
+					'GET /orders/getNewOrderByShop': 'orders.getNewOrderByShop',
 
 					'POST /shop/create': 'shops.create',
 					'POST /shop/update': 'shops.update',
