@@ -179,6 +179,40 @@ module.exports = {
 				}
 				return apiResponse.badRequestResponse('Not exists');
 			}
+		},
+
+		getNewOrderByShop: {
+			async handler(ctx) {
+				try {
+					if (!ctx.meta.user || !ctx.meta.user.user_id) {
+						return 'Unauthorized';
+					}
+					const shop_id = ctx.meta.user.user_id;
+					const queries = {
+						status: '0',
+						shop_id: new ObjectID(shop_id)
+					};
+
+					Object.keys(queries).forEach((x) => {
+						if (queries[x] === null || queries[x] === undefined || queries[x] == 'all') {
+							delete queries[x];
+						}
+					});
+
+					let data = await this.adapter.find({
+						query: queries
+					});
+					console.log('zxc', data);
+					if (data && data.length > 0) {
+						return apiResponse.successResponseWithData('success', data[0]);
+					} else {
+						return apiResponse.successResponseWithData('no_data', null);
+					}
+				} catch (err) {
+					console.log('errrxx', err);
+					return apiResponse.ErrorResponse('Cannot get order');
+				}
+			}
 		}
 	},
 	/**
