@@ -125,11 +125,10 @@ module.exports = {
 			async handler(ctx) {
 				const limit = ctx.params.limit ? Number(ctx.params.limit) : 20;
 				const offset = ctx.params.offset ? Number(ctx.params.offset) : 0;
-				const shop_id = ctx.meta.user.user_id;
+				let shop_id = ctx.meta.user.user_id;
 				let params = {
 					limit,
 					offset,
-					shop_id,
 					sort: [ '-created_at' ]
 				};
 				let countParams;
@@ -141,12 +140,16 @@ module.exports = {
 
 				const res = await this.Promise.all([
 					// Get rows
-					this.adapter.find(params),
-
+					this.adapter.find({
+						query: { shop_id: new ObjectID(ctx.meta.user.user_id) },
+						limit: params.limit,
+						offset: params.offset,
+						sort: [ '-created_at' ]
+					}),
+					// this.adapter.find(params),
 					// Get count of all rows
-					this.adapter.count(countParams)
+					this.adapter.count({ query: { shop_id: new ObjectID(ctx.meta.user.user_id) } })
 				]);
-
 				const docs = await this.transformDocuments(ctx, params, res[0]);
 				const result = {
 					products: docs,

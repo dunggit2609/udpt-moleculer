@@ -135,67 +135,49 @@ module.exports = {
 		},
 
 		getAllByShop: {
+			params: {
+				limit: { type: 'number', optional: true, convert: true },
+				offset: { type: 'number', optional: true, convert: true }
+			},
 			async handler(ctx) {
-				try {
-					const { page, size, status } = ctx.params;
-					const shop_id = ctx.meta.user.user_id;
-					console.log('shop_id: ', shop_id);
-					const queries = {
-						status: status,
-						shop_id: new ObjectID(shop_id)
-					};
+				const limit = ctx.params.limit ? Number(ctx.params.limit) : 20;
+				const offset = ctx.params.offset ? Number(ctx.params.offset) : 0;
+				let shop_id = ctx.meta.user.user_id;
+				let params = {
+					limit,
+					offset,
+					sort: [ '-created_at' ]
+				};
+				let countParams;
 
-					Object.keys(queries).forEach((x) => {
-						if (queries[x] === null || queries[x] === undefined) {
-							delete queries[x];
-						}
-					});
-					console.log(queries);
-					const data = await this.adapter.find({
-						status: status,
-						shop_id: shop_id
-					});
-					console.log(data);
-					const { response, totalItems } = getPagingData(data, page, size);
-					return apiResponse.successResponseWithPagingData('success', response, page, totalItems);
-				} catch (err) {
-					console.log('errrxx', err);
-					return apiResponse.ErrorResponse('Cannot get order');
+				countParams = Object.assign({}, params);
+				// Remove pagination params
+				if (countParams && countParams.limit) countParams.limit = null;
+				if (countParams && countParams.offset) countParams.offset = null;
+
+				const res = await this.Promise.all([
+					// Get rows
+					this.adapter.find({
+						query: { shop_id: new ObjectID(ctx.meta.user.user_id) },
+						limit: params.limit,
+						offset: params.offset,
+						sort: [ '-created_at' ]
+					}),
+					// this.adapter.find(params),
+					// Get count of all rows
+					this.adapter.count({ query: { shop_id: new ObjectID(ctx.meta.user.user_id) } })
+				]);
+				const docs = await this.transformDocuments(ctx, params, res[0]);
+				const result = {
+					orders: docs,
+					orderCount: res[1]
+				};
+				console.log('result: ', result);
+
+				if (result.orderCount > 0) {
+					return apiResponse.successResponseWithData('success', result);
 				}
-			}
-		},
-
-		getNewOrderByShop: {
-			async handler(ctx) {
-				try {
-					if (!ctx.meta.user || !ctx.meta.user.user_id) {
-						return 'Unauthorized';
-					}
-					const shop_id = ctx.meta.user.user_id;
-					const queries = {
-						status: '0',
-						shop_id: new ObjectID(shop_id)
-					};
-
-					Object.keys(queries).forEach((x) => {
-						if (queries[x] === null || queries[x] === undefined || queries[x] == 'all') {
-							delete queries[x];
-						}
-					});
-					console.log('queries: ', queries);
-					let data = await this.adapter.find({
-						query: queries
-					});
-					console.log('zxc', data);
-					if (data && data.length > 0) {
-						return apiResponse.successResponseWithData('success', data[0]);
-					} else {
-						return apiResponse.successResponseWithData('no_data', null);
-					}
-				} catch (err) {
-					console.log('errrxx', err);
-					return apiResponse.ErrorResponse('Cannot get order');
-				}
+				return apiResponse.badRequestResponse('Not exists');
 			}
 		}
 	},
