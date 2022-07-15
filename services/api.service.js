@@ -89,7 +89,12 @@ module.exports = {
 					'GET /product/getProductByShop': 'products.getProductByShop',
 
 					'GET /productCategory/getAll': 'productCategories.getAll',
-					'GET /productCategory/get/:id': 'productCategories.get'
+					'GET /productCategory/get/:id': 'productCategories.get',
+
+          "GET /system-reviews/get/:id": "systemReviews.get",
+          "POST /system-reviews/create": "systemReviews.create",
+          "GET /system-reviews": "systemReviews.list",
+          "POST /system-reviews/reply/:id": "systemReviews.reply",
 				},
 				onBeforeCall(ctx, route, req, res) {
 					let accessToken = req.headers['authorization'];
