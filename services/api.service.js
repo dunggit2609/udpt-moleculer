@@ -20,6 +20,7 @@ module.exports = {
 					'*'
 				],
 				aliases: {
+					'GET /shippers/listShipper': 'shippers.listShipper',
 					'GET /shippers/:id': 'shippers.getByUserId',
 					'POST /shippers/update-health': 'shippers.updateHealth',
 					'GET /shippers/get/me': 'shippers.getInfo',
@@ -32,6 +33,8 @@ module.exports = {
 					'GET /orders/get/:id': 'orders.get',
 					'GET /orders/getAllByShop': 'orders.getAllByShop',
 					'GET /orders/getNewOrderByShop': 'orders.getNewOrderByShop',
+					'GET /orders/getDetailByShop': 'orders.getDetailByShop',
+					'POST /orders/updateOrderWithShipperId': 'orders.updateOrderWithShipperId',
 
 					'POST /shop/create': 'shops.create',
 					'POST /shop/update': 'shops.update',
@@ -39,7 +42,9 @@ module.exports = {
 					'POST /shop/updateProduct': 'shops.updateProduct',
 					'POST /shop/getOrderById': 'shops.getOrderById',
 					'GET /shop/getAllProduct': 'shops.getAllProduct',
+					'GET /shop/getById': 'shops.getById',
 
+					'GET /product/getByIds': 'products.getByIds',
 					'POST /product/create': 'products.create',
 					'PUT /product/update': 'products.update',
 					'GET /product/getAll': 'products.getAll',
@@ -47,7 +52,9 @@ module.exports = {
 					'GET /product/getProductByShop': 'products.getProductByShop',
 
 					'GET /productCategory/getAll': 'productCategories.getAll',
-					'GET /productCategory/get/:id': 'productCategories.get'
+					'GET /productCategory/get/:id': 'productCategories.get',
+
+					'GET /customer/getById': 'customers.getById'
 				},
 				onBeforeCall(ctx, route, req, res) {
 					let accessToken = req.headers['authorization'];

@@ -62,6 +62,16 @@ module.exports = {
 			}
 		},
 
+		getById: {
+			async handler(ctx) {
+				let data = await this.getById(new ObjectID(ctx.params.id));
+
+				if (data) {
+					return data;
+				}
+			}
+		},
+
 		getAll: {
 			async handler(ctx) {}
 		},

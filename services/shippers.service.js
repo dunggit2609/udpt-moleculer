@@ -144,6 +144,52 @@ module.exports = {
 					return apiResponse.ErrorResponse('Cannot update health');
 				}
 			}
+		},
+		listShipper: {
+			params: {
+				limit: { type: 'number', optional: true, convert: true },
+				offset: { type: 'number', optional: true, convert: true }
+			},
+			async handler(ctx) {
+				console.log('in listshipper');
+				const limit = ctx.params.limit ? Number(ctx.params.limit) : 20;
+				const offset = ctx.params.offset ? Number(ctx.params.offset) : 0;
+				let params = {
+					limit,
+					offset,
+					sort: [ '-created_at' ]
+				};
+				let countParams;
+
+				countParams = Object.assign({}, params);
+				// Remove pagination params
+				if (countParams && countParams.limit) countParams.limit = null;
+				if (countParams && countParams.offset) countParams.offset = null;
+
+				const res = await this.Promise.all([
+					// Get rows
+					this.adapter.find({
+						limit: params.limit,
+						offset: params.offset,
+						sort: [ '-created_at' ]
+					}),
+
+					// Get count of all rows
+					this.adapter.count(countParams)
+				]);
+
+				// const docs = await this.transformDocuments(ctx, params, res[0]);
+				// const r = await this.transformResult(ctx, docs);
+				const docs = await this.transformDocuments(ctx, params, res[0]);
+				const result = {
+					shipper: docs,
+					shipperCount: res[1]
+				};
+				if (result.shipperCount > 0) {
+					return apiResponse.successResponseWithData('success', result);
+				}
+				return apiResponse.badRequestResponse('Not exists');
+			}
 		}
 		// create: {
 		// 	async handler(ctx) {

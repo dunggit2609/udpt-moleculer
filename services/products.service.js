@@ -48,6 +48,15 @@ module.exports = {
 			}
 		},
 
+		getByIds: {
+			async handler(ctx) {
+				const ids = ctx.params;
+				let data = await this.adapter.find();
+
+				return data.filter((x) => ids.includes(`${x._id}`));
+			}
+		},
+
 		getAll: {
 			async handler(ctx) {
 				let data = await this.adapter.find();

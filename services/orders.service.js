@@ -62,6 +62,7 @@ module.exports = {
 				return apiResponse.badRequestResponse('Not exists');
 			}
 		},
+
 		getAllByShipper: {
 			async handler(ctx) {
 				try {
@@ -211,6 +212,100 @@ module.exports = {
 				} catch (err) {
 					console.log('errrxx', err);
 					return apiResponse.ErrorResponse('Cannot get order');
+				}
+			}
+		},
+
+		getDetailByShop: {
+			async handler(ctx) {
+				if (!ctx.meta.user || !ctx.meta.user.user_id) {
+					return 'Unauthorized';
+				}
+
+				let data = await this.getById(new ObjectID(ctx.params.id));
+				data = JSON.parse(JSON.stringify(data));
+				console.log('data: ', data);
+
+				if (`${data.shop_id}` !== ctx.meta.user.user_id) {
+					return 'Forbidden';
+				}
+
+				const productIds = data.product.map((x) => x.product_id);
+				console.log('productIds: ', productIds);
+				const products = await ctx.call('products.getByIds', productIds);
+				console.log('products: ', products);
+
+				data.products = [];
+				if (products.length > 0) {
+					data.product.forEach((x) => {
+						const product = products.find((y) => `${y._id}` === `${x.product_id}`);
+						if (product) {
+							x = { ...x, ...product };
+							data.products.push({ ...product, quantity: x.quantity });
+						}
+					});
+				}
+
+				delete data.product;
+
+				const customer = await ctx.call('customers.getById', {
+					id: data.customer_id
+				});
+
+				if (customer) {
+					data.customer_info = customer;
+				}
+
+				const shop = await ctx.call('shops.getById', { id: data.shop_id });
+
+				if (shop) {
+					data.shop_info = shop;
+				}
+				console.log(data);
+				if (data) {
+					return apiResponse.successResponseWithData('success', data);
+				}
+
+				return apiResponse.successResponseWithData('Not exists', null);
+			}
+		},
+
+		updateOrderWithShipperId: {
+			async handler(ctx) {
+				try {
+					const payload = JSON.parse(Object.keys(ctx.params)[0]);
+					const { order_id, shipper_id } = payload;
+
+					const { role, user_id } = ctx.meta.user;
+
+					console.log(order_id, shipper_id, role, user_id);
+
+					const order = await this.getById(new ObjectID(order_id));
+
+					if (!order) {
+						return apiResponse.badRequestResponse(null, 'Order not exists');
+					}
+
+					switch (role) {
+						case USER_ROLE_SHOP:
+							if (!order.shop_id.equals(user_id)) {
+								return apiResponse.forbiddenResponse();
+							}
+					}
+
+					const result = await this._update(new ObjectID(order_id), {
+						...order,
+						status: 1,
+						shipper_id: new ObjectID(shipper_id)
+					});
+					console.log(result);
+					if (!result) {
+						return apiResponse.ErrorResponse('Update failed');
+					}
+					return apiResponse.successResponse('Success');
+				} catch (err) {
+					console.log('errrxx', err);
+					return apiResponse.ErrorResponse('Cannot update order');
 				}
 			}
 		}
