@@ -12,7 +12,7 @@ module.exports = {
     port: process.env.PORT || 3000,
     cors: {
       // Configures the Access-Control-Allow-Origin CORS header.
-      origin: 'http://localhost:8888',
+      origin: ['http://localhost:8888', 'http://localhost:63342'],
       // Configures the Access-Control-Allow-Methods CORS header.
       methods: ['GET', 'OPTIONS', 'POST', 'PUT', 'DELETE'],
       // Configures the Access-Control-Allow-Headers CORS header.
@@ -78,6 +78,7 @@ module.exports = {
 
           'GET /customers/me': 'customers.getCurrentUser',
           'POST customers/shipping-info': 'customers.updateAddress',
+          'GET /customers/products/:id': 'customers.getProductById',
 
           'GET /products/search': 'products.searchAndFilter',
 
