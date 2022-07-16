@@ -190,7 +190,7 @@ module.exports = {
 					}
 					const shop_id = ctx.meta.user.user_id;
 					const queries = {
-						status: '0',
+						status: 0,
 						shop_id: new ObjectID(shop_id)
 					};
 
