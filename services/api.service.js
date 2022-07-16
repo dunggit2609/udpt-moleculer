@@ -112,7 +112,11 @@ module.exports = {
           "POST /system-reviews/create": "systemReviews.create",
           "GET /system-reviews": "systemReviews.list",
           "POST /system-reviews/reply/:id": "systemReviews.reply",
-					'GET /payments': 'payments.list'
+					'GET /payments': 'payments.list',
+
+
+          "GET /orders/updateOrderDB": "orders.updateOrderDB",
+          "GET /shippers/updateHealth/DB": "shippers.updateHealthDB",
 				},
 				onBeforeCall(ctx, route, req, res) {
 					let accessToken = req.headers['authorization'];

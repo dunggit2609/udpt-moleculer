@@ -241,7 +241,33 @@ module.exports = {
           return apiResponse.ErrorResponse("Cannot get order");
         }
       }
-    }
+    },
+    updateHealthDB: {
+      async handler(ctx) {
+      
+
+        const shipper_id = "627287066541401c09e8a204";
+        const date = new Date("2022/07/17");
+
+        try {
+          const shipper = await this.getById(new ObjectID(shipper_id));
+          const newShipper = Object.assign({}, shipper);
+          newShipper.working_info.forEach(x => {
+            x.date = date;
+          });
+
+
+          const result = await this._update(new ObjectID(shipper_id), newShipper);
+          if (!result) {
+            return apiResponse.ErrorResponse('Update failed');
+          }
+          return apiResponse.successResponse('Success');
+        } catch (err) {
+          console.log("err", err);
+          return apiResponse.ErrorResponse("Cannot update health");
+        }
+      },
+    },
 
   },
 

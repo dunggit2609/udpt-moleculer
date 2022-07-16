@@ -178,16 +178,16 @@ module.exports = {
 
           const fromDate = from
             ? new Date(
-                format(
-                  typeof from === 'string' ? new Date(from) : from,
-                  'yyyy-MM-dd'
-                )
+              format(
+                typeof from === 'string' ? new Date(from) : from,
+                'yyyy-MM-dd'
               )
+            )
             : null;
           const toDate = to
             ? new Date(
-                format(typeof to === 'string' ? new Date(to) : to, 'yyyy-MM-dd')
-              )
+              format(typeof to === 'string' ? new Date(to) : to, 'yyyy-MM-dd')
+            )
             : null;
 
           data = data.filter((x) => {
@@ -252,27 +252,26 @@ module.exports = {
           const { role, user_id } = ctx.meta.user;
 
           const order = await this.getById(new ObjectID(order_id));
-
           if (!order) {
             return apiResponse.badRequestResponse(res, 'Order not exists');
           }
-
           switch (role) {
             case USER_ROLE_SHIPPER:
               if (!order.shipper_id.equals(user_id)) {
                 return apiResponse.forbiddenResponse();
               }
+              break;
             case USER_ROLE_SHOP:
-							if (!order.shop_id.equals(user_id)) {
-								return apiResponse.forbiddenResponse();
-							}
+              if (!order.shop_id?.equals(user_id)) {
+                return apiResponse.forbiddenResponse();
+              }
+              break;
           }
 
           const result = await this._update(new ObjectID(order_id), {
             ...order,
             status: status,
           });
-
           if (!result) {
             return apiResponse.ErrorResponse('Update failed');
           }
@@ -309,7 +308,6 @@ module.exports = {
           let data = await this.adapter.find({
             query: queries,
           });
-          console.log('zxc', data);
           if (data && data.length > 0) {
             return apiResponse.successResponseWithData('success', data[0]);
           } else {
@@ -323,139 +321,138 @@ module.exports = {
     },
 
     getAllByShop: {
-			params: {
-				limit: { type: 'number', optional: true, convert: true },
-				offset: { type: 'number', optional: true, convert: true }
-			},
-			async handler(ctx) {
-				const limit = ctx.params.limit ? Number(ctx.params.limit) : 20;
-				const offset = ctx.params.offset ? Number(ctx.params.offset) : 0;
-				let shop_id = ctx.meta.user.user_id;
-				let params = {
-					limit,
-					offset,
-					sort: [ '-created_at' ]
-				};
-				let countParams;
+      params: {
+        limit: { type: 'number', optional: true, convert: true },
+        offset: { type: 'number', optional: true, convert: true }
+      },
+      async handler(ctx) {
+        const limit = ctx.params.limit ? Number(ctx.params.limit) : 20;
+        const offset = ctx.params.offset ? Number(ctx.params.offset) : 0;
+        let shop_id = ctx.meta.user.user_id;
+        let params = {
+          limit,
+          offset,
+          sort: ['-created_at']
+        };
+        let countParams;
 
-				countParams = Object.assign({}, params);
-				// Remove pagination params
-				if (countParams && countParams.limit) countParams.limit = null;
-				if (countParams && countParams.offset) countParams.offset = null;
+        countParams = Object.assign({}, params);
+        // Remove pagination params
+        if (countParams && countParams.limit) countParams.limit = null;
+        if (countParams && countParams.offset) countParams.offset = null;
 
-				const res = await this.Promise.all([
-					// Get rows
-					this.adapter.find({
-						query: { shop_id: new ObjectID(ctx.meta.user.user_id) },
-						limit: params.limit,
-						offset: params.offset,
-						sort: [ '-created_at' ]
-					}),
-					// this.adapter.find(params),
-					// Get count of all rows
-					this.adapter.count({ query: { shop_id: new ObjectID(ctx.meta.user.user_id) } })
-				]);
-				const docs = await this.transformDocuments(ctx, params, res[0]);
-				const result = {
-					orders: docs,
-					orderCount: res[1]
-				};
-				console.log('result: ', result);
+        const res = await this.Promise.all([
+          // Get rows
+          this.adapter.find({
+            query: { shop_id: new ObjectID(ctx.meta.user.user_id) },
+            limit: params.limit,
+            offset: params.offset,
+            sort: ['-created_at']
+          }),
+          // this.adapter.find(params),
+          // Get count of all rows
+          this.adapter.count({ query: { shop_id: new ObjectID(ctx.meta.user.user_id) } })
+        ]);
+        const docs = await this.transformDocuments(ctx, params, res[0]);
+        const result = {
+          orders: docs,
+          orderCount: res[1]
+        };
+        console.log('result: ', result);
 
-				if (result.orderCount > 0) {
-					return apiResponse.successResponseWithData('success', result);
-				}
-				return apiResponse.badRequestResponse('Not exists');
-			}
-		},
+        if (result.orderCount > 0) {
+          return apiResponse.successResponseWithData('success', result);
+        }
+        return apiResponse.badRequestResponse('Not exists');
+      }
+    },
 
-		getNewOrderByShop: {
-			async handler(ctx) {
-				try {
-					if (!ctx.meta.user || !ctx.meta.user.user_id) {
-						return 'Unauthorized';
-					}
-					const shop_id = ctx.meta.user.user_id;
-					const queries = {
-						status: 0,
-						shop_id: new ObjectID(shop_id)
-					};
+    getNewOrderByShop: {
+      async handler(ctx) {
+        try {
+          if (!ctx.meta.user || !ctx.meta.user.user_id) {
+            return 'Unauthorized';
+          }
+          const shop_id = ctx.meta.user.user_id;
+          const queries = {
+            status: 0,
+            shop_id: new ObjectID(shop_id)
+          };
 
-					Object.keys(queries).forEach((x) => {
-						if (queries[x] === null || queries[x] === undefined || queries[x] == 'all') {
-							delete queries[x];
-						}
-					});
+          Object.keys(queries).forEach((x) => {
+            if (queries[x] === null || queries[x] === undefined || queries[x] == 'all') {
+              delete queries[x];
+            }
+          });
 
-					let data = await this.adapter.find({
-						query: queries
-					});
-					console.log('zxc', data);
-					if (data && data.length > 0) {
-						return apiResponse.successResponseWithData('success', data[0]);
-					} else {
-						return apiResponse.successResponseWithData('no_data', null);
-					}
-				} catch (err) {
-					console.log('errrxx', err);
-					return apiResponse.ErrorResponse('Cannot get order');
-				}
-			}
-		},
+          let data = await this.adapter.find({
+            query: queries
+          });
+          console.log('zxc', data);
+          if (data && data.length > 0) {
+            return apiResponse.successResponseWithData('success', data[0]);
+          } else {
+            return apiResponse.successResponseWithData('no_data', null);
+          }
+        } catch (err) {
+          console.log('errrxx', err);
+          return apiResponse.ErrorResponse('Cannot get order');
+        }
+      }
+    },
 
-		getDetailByShop: {
-			async handler(ctx) {
-				if (!ctx.meta.user || !ctx.meta.user.user_id) {
-					return 'Unauthorized';
-				}
+    getDetailByShop: {
+      async handler(ctx) {
+        if (!ctx.meta.user || !ctx.meta.user.user_id) {
+          return 'Unauthorized';
+        }
 
-				let data = await this.getById(new ObjectID(ctx.params.id));
-				data = JSON.parse(JSON.stringify(data));
-				console.log('data: ', data);
+        let data = await this.getById(new ObjectID(ctx.params.id));
+        data = JSON.parse(JSON.stringify(data));
+        console.log('data: ', data);
 
-				if (`${data.shop_id}` !== ctx.meta.user.user_id) {
-					return 'Forbidden';
-				}
+        if (`${data.shop_id}` !== ctx.meta.user.user_id) {
+          return 'Forbidden';
+        }
 
-				const productIds = data.product.map((x) => x.product_id);
-				console.log('productIds: ', productIds);
-				const products = await ctx.call('products.getByIds', productIds);
-				console.log('products: ', products);
+        const productIds = data.product.map((x) => x.product_id);
+        console.log('productIds: ', productIds);
+        const products = await ctx.call('products.getByIds', productIds);
+        console.log('products: ', products);
 
-				data.products = [];
-				if (products.length > 0) {
-					data.product.forEach((x) => {
-						const product = products.find((y) => `${y._id}` === `${x.product_id}`);
-						if (product) {
-							x = { ...x, ...product };
-							data.products.push({ ...product, quantity: x.quantity });
-						}
-					});
-				}
+        data.products = [];
+        if (products.length > 0) {
+          data.product.forEach((x) => {
+            const product = products.find((y) => `${y._id}` === `${x.product_id}`);
+            if (product) {
+              x = { ...x, ...product };
+              data.products.push({ ...product, quantity: x.quantity });
+            }
+          });
+        }
 
-				delete data.product;
+        delete data.product;
 
-				const customer = await ctx.call('customers.getById', {
-					id: data.customer_id
-				});
+        const customer = await ctx.call('customers.getById', {
+          id: data.customer_id
+        });
 
-				if (customer) {
-					data.customer_info = customer;
-				}
+        if (customer) {
+          data.customer_info = customer;
+        }
 
-				const shop = await ctx.call('shops.getById', { id: data.shop_id });
+        const shop = await ctx.call('shops.getById', { id: data.shop_id });
 
-				if (shop) {
-					data.shop_info = shop;
-				}
-				console.log(data);
-				if (data) {
-					return apiResponse.successResponseWithData('success', data);
-				}
+        if (shop) {
+          data.shop_info = shop;
+        }
+        if (data) {
+          return apiResponse.successResponseWithData('success', data);
+        }
 
-				return apiResponse.successResponseWithData('Not exists', null);
-			}
-		},
+        return apiResponse.successResponseWithData('Not exists', null);
+      }
+    },
 
     createOrder: {
       async handler(ctx) {
