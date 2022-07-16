@@ -9,13 +9,6 @@ const { ObjectID } = require('bson');
 const { USER_ROLE_SHIPPER } = require('../constant');
 const { MoleculerError } = require('moleculer').Errors;
 const { format } = require('date-fns');
-
-const getPagingData = require('../helpers/pagingData');
-var apiResponse = require('../helpers/apiResponse');
-const MongoDBAdapter = require('moleculer-db-adapter-mongo');
-const { ObjectID } = require('bson');
-const { USER_ROLE_SHIPPER, USER_ROLE_SHOP } = require('../constant');
-const { MoleculerError } = require('moleculer').Errors;
 module.exports = {
   name: 'orders',
   mixins: [DbService],
