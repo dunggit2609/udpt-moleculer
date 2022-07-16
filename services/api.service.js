@@ -59,6 +59,9 @@ module.exports = {
 
           "GET /shops": "shops.list",
           "PUT /shops/update-status/:id": "shops.updateShopStatus",
+          'GET /shops/listShop': 'shops.listShop',
+          'POST /products/cusGetAllProductByShop': 'products.cusGetAllProductByShop',
+          'GET /products/cusGetAllByIds': 'products.cusGetAllByIds',
 
           'POST /orders': 'orders.createOrder',
 
@@ -95,6 +98,7 @@ module.exports = {
           "POST /system-reviews/create": "systemReviews.create",
           "GET /system-reviews": "systemReviews.list",
           "POST /system-reviews/reply/:id": "systemReviews.reply",
+					'GET /payments': 'payments.list'
 				},
 				onBeforeCall(ctx, route, req, res) {
 					let accessToken = req.headers['authorization'];

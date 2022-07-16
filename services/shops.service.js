@@ -268,7 +268,37 @@ module.exports = {
 					return apiResponse.badRequestResponse('Cannot find products');
 				}
 			}
-		}
+		}, 
+    listShop: {
+      params: {
+        page: { type: "number", optional: true, convert: true },
+        size: { type: "number", optional: true, convert: true },
+        search: { type: "string", optional: true, convert: true },
+      },
+      async handler(ctx) {
+        const page = ctx.params.page ? Number(ctx.params.page) : 1;
+        const size = ctx.params.size ? Number(ctx.params.size) : 10;
+        const search = ctx.params.search ?? '';
+
+        const res = await this.adapter.find();
+
+        const data = res.filter(x => !search || x.name.includes(search) || x.email.includes(search) || x.phone.includes(search));
+        const {response, totalItems} = getPagingData(data, page, size)
+
+        const result = {
+          shops: response,
+          shopCount: totalItems,
+          page: page
+        };
+
+        console.log("zxc", result)
+
+        if (result.shopCount > 0) {
+          return apiResponse.successResponseWithData("success", result);
+        }
+        return apiResponse.badRequestResponse("Not exists");
+      },
+    },
   },
   /**
   actions: {
