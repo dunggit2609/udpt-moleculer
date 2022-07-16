@@ -107,6 +107,10 @@ module.exports = {
 					'GET /productCategory/get/:id': 'productCategories.get',
 
 					'GET /customer/getById': 'customers.getById',
+          "GET /system-reviews/get/:id": "systemReviews.get",
+          "POST /system-reviews/create": "systemReviews.create",
+          "GET /system-reviews": "systemReviews.list",
+          "POST /system-reviews/reply/:id": "systemReviews.reply",
 					'GET /payments': 'payments.list'
 				},
 				onBeforeCall(ctx, route, req, res) {
