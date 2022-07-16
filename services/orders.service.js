@@ -10,45 +10,45 @@ const { USER_ROLE_SHIPPER } = require('../constant');
 const { MoleculerError } = require('moleculer').Errors;
 const { format } = require('date-fns');
 module.exports = {
-  name: 'orders',
-  mixins: [DbService],
-  adapter: new MongoDBAdapter(
-    'mongodb+srv://admin1:123@cluster0.msdkr.mongodb.net/Order?retryWrites=true&w=majority',
-    { useUnifiedTopology: true }
-  ),
-  collection: 'Order',
-  /**
+	name: 'orders',
+	mixins: [ DbService ],
+	adapter: new MongoDBAdapter(
+		'mongodb+srv://thangbach:123@cluster0.msdkr.mongodb.net/Order?retryWrites=true&w=majority',
+		{ useUnifiedTopology: true }
+	),
+	collection: 'Order',
+	/**
    * Service settings
    */
-  settings: {
-    fields: [
-      '_id',
-      'payment',
-      'review',
-      'customer_id',
-      'shipper_id',
-      'total_cost',
-      'total_product',
-      'status',
-      'note',
-      'product',
-      'shop_id',
-      'created_at',
-      'updated_at',
-    ],
-  },
+	settings: {
+		fields: [
+			'_id',
+			'payment',
+			'review',
+			'customer_id',
+			'shipper_id',
+			'total_cost',
+			'total_product',
+			'status',
+			'note',
+			'product',
+			'shop_id',
+			'created_at',
+			'updated_at'
+		]
+	},
 
-  /**
+	/**
    * Service metadata
    */
-  metadata: {},
+	metadata: {},
 
-  /**
+	/**
    * Service dependencies
    */
-  //dependencies: [],
+	//dependencies: [],
 
-  /**
+	/**
    * Actions
    */
   actions: {
@@ -454,114 +454,140 @@ module.exports = {
       }
     },
 
-    createOrder: {
-      async handler(ctx) {
-        try {
-          if (!ctx.meta.user) {
-            return new apiResponse.unauthorizedResponse('Unauthorized');
-          }
+		createOrder: {
+			async handler(ctx) {
+				try {
+					if (!ctx.meta.user) {
+						return new apiResponse.unauthorizedResponse('Unauthorized');
+					}
 
-          const { user_id } = ctx.meta.user;
-          const key = Object.keys(ctx.params)[0];
-          const value = '[' + Object.keys(ctx.params[key])[0] + ']';
+					const { user_id } = ctx.meta.user;
+					const key = Object.keys(ctx.params)[0];
+					const value = '[' + Object.keys(ctx.params[key])[0] + ']';
 
-          const items = JSON.parse(value);
+					const items = JSON.parse(value);
 
-          const products = [];
+					const products = [];
 
-          const { data: payment } = await ctx.call('payment.getByPaymentID', {
-            payment_id: '62555abfe078c36742dcd866',
-          });
+					const { data: payment } = await ctx.call('payment.getByPaymentID', {
+						payment_id: '62555abfe078c36742dcd866'
+					});
 
-          for (const item of items) {
-            console.log(item);
-            const data = await ctx.call('products.get', {
-              id: item.id,
-            });
-            const { data: product } = data;
+					for (const item of items) {
+						console.log(item);
+						const data = await ctx.call('products.get', {
+							id: item.id
+						});
+						const { data: product } = data;
 
-            if (!product)
-              return apiResponse.notFoundResponse(
-                {},
-                `Product ${item.id} not found`
-              );
-            if (item.quantity > product.inventory) {
-              return apiResponse.badRequestResponse(
-                `Insufficient inventory for ${item.id} - ${product.name}`
-              );
-            }
-            products.push({ ...product, quantity: item.quantity });
-          }
-          const orders = {};
+						if (!product) return apiResponse.notFoundResponse({}, `Product ${item.id} not found`);
+						if (item.quantity > product.inventory) {
+							return apiResponse.badRequestResponse(
+								`Insufficient inventory for ${item.id} - ${product.name}`
+							);
+						}
+						products.push({ ...product, quantity: item.quantity });
+					}
+					const orders = {};
 
-          for (const product of products) {
-            console.log(product);
-            if (!orders[product.shop_id]) {
-              orders[product.shop_id] = {
-                created_at: new Date(),
-                updated_at: new Date(),
-                _id: new ObjectID(),
-                product: [],
-                customer_id: user_id,
-                shipper_id: null,
-                total_cost: 0,
-                total_product: 0,
-                payment: {
-                  status: false,
-                  _id: payment._id,
-                },
-                shop_id: product.shop_id,
-              };
-            }
+					for (const product of products) {
+						console.log(product);
+						if (!orders[product.shop_id]) {
+							orders[product.shop_id] = {
+								created_at: new Date(),
+								updated_at: new Date(),
+								_id: new ObjectID(),
+								product: [],
+								customer_id: user_id,
+								shipper_id: null,
+								total_cost: 0,
+								total_product: 0,
+								payment: {
+									status: false,
+									_id: payment._id
+								},
+								shop_id: product.shop_id
+							};
+						}
 
-            orders[product.shop_id].product.push({
-              product_id: product._id,
-              quantity: product.quantity,
-            });
-            orders[product.shop_id].total_cost +=
-              product.unit_price * product.quantity;
-            orders[product.shop_id].total_product += product.quantity;
-          }
+						orders[product.shop_id].product.push({
+							product_id: product._id,
+							quantity: product.quantity
+						});
+						orders[product.shop_id].total_cost += product.unit_price * product.quantity;
+						orders[product.shop_id].total_product += product.quantity;
+					}
 
-          let ordersArr = Object.values(orders);
-          console.log(ordersArr);
+					let ordersArr = Object.values(orders);
+					console.log(ordersArr);
 
-          let result = await this.adapter.insertMany(ordersArr);
+					let result = await this.adapter.insertMany(ordersArr);
 
-          if (!result) {
-            return apiResponse.ErrorResponse('Created Failed');
-          }
+					if (!result) {
+						return apiResponse.ErrorResponse('Created Failed');
+					}
 
-          return apiResponse.successResponseWithData('Success', result);
-        } catch (err) {
-          return apiResponse.ErrorResponse(err + '');
-        }
-      },
-    },
-  },
+					return apiResponse.successResponseWithData('Success', result);
+				} catch (err) {
+					return apiResponse.ErrorResponse(err + '');
+				}
+			}
+		},
+		updateOrderWithShipperId: {
+			async handler(ctx) {
+				try {
+					const payload = JSON.parse(Object.keys(ctx.params)[0]);
+					const { order_id, shipper_id } = payload;
 
-  /**
+					const { role, user_id } = ctx.meta.user;
+
+					console.log(order_id, shipper_id, role, user_id);
+
+					const order = await this.getById(new ObjectID(order_id));
+
+					if (!order) {
+						return apiResponse.badRequestResponse(null, 'Order not exists');
+					}
+					const result = await this._update(new ObjectID(order_id), {
+						...order,
+						status: 1,
+						shipper_id: new ObjectID(shipper_id)
+					});
+					console.log(result);
+					if (!result) {
+						return apiResponse.ErrorResponse('Update failed');
+					}
+					return apiResponse.successResponse('Success');
+				} catch (err) {
+					console.log('errrxx', err);
+					return apiResponse.ErrorResponse('Cannot update order');
+				}
+			}
+		}
+	},
+
+	/**
    * Events
    */
-  events: {},
+	events: {},
 
-  /**
+	/**
    * Methods
    */
-  methods: {},
+	methods: {},
 
-  /**
+	/**
    * Service created lifecycle event handler
    */
-  created() {},
+	created() {},
 
-  /**
+	/**
    * Service started lifecycle event handler
    */
-  started() {},
+	started() {},
 
-  /**
+	/**
    * Service stopped lifecycle event handler
    */
-  stopped() {},
+	stopped() {}
 };

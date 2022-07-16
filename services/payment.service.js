@@ -8,84 +8,84 @@ const MongoDBAdapter = require('moleculer-db-adapter-mongo');
 const { ObjectID } = require('bson');
 
 module.exports = {
-  name: 'payment',
-  mixins: [DbService],
-  adapter: new MongoDBAdapter(
-    'mongodb+srv://admin1:123@cluster0.msdkr.mongodb.net/Payment?retryWrites=true&w=majority',
-    { useUnifiedTopology: true }
-  ),
-  collection: 'Payment',
-  /**
+	name: 'payment',
+	mixins: [ DbService ],
+	adapter: new MongoDBAdapter(
+		'mongodb+srv://thangbach:123@cluster0.msdkr.mongodb.net/Payment?retryWrites=true&w=majority',
+		{ useUnifiedTopology: true }
+	),
+	collection: 'Payment',
+	/**
    * Service settings
    */
-  settings: {
-    fields: ['_id', 'name', 'create_at', 'update_at'],
-  },
+	settings: {
+		fields: [ '_id', 'name', 'create_at', 'update_at' ]
+	},
 
-  /**
+	/**
    * Service metadata
    */
-  metadata: {},
+	metadata: {},
 
-  /**
+	/**
    * Service dependencies
    */
-  //dependencies: [],
+	//dependencies: [],
 
-  /**
+	/**
    * Actions
    */
-  actions: {
-    getByPaymentID: {
-      async handler(ctx) {
-        let data = await this.adapter.find({
-          query: { _id: ObjectID(ctx.params.payment_id) },
-        });
-        data = data[0];
-        console.log(ctx.params.payment_id);
-        return apiResponse.successResponseWithData('success', data);
-      },
-    },
-    getAll: {
-      async handler(ctx) {
-        let data = await this.adapter.find();
-        data = JSON.parse(JSON.stringify(data));
-        if (data) {
-          return apiResponse.successResponseWithData('success', data);
-        }
+	actions: {
+		getByPaymentID: {
+			async handler(ctx) {
+				let data = await this.adapter.find({
+					query: { _id: ObjectID(ctx.params.payment_id) }
+				});
+				data = data[0];
+				console.log(ctx.params.payment_id);
+				return apiResponse.successResponseWithData('success', data);
+			}
+		},
+		getAll: {
+			async handler(ctx) {
+				let data = await this.adapter.find();
+				data = JSON.parse(JSON.stringify(data));
+				if (data) {
+					return apiResponse.successResponseWithData('success', data);
+				}
 
-        return apiResponse.badRequestResponse('Not exists');
-      },
-    },
-    list: {
-      async handler(ctx) {
-        return apiResponse.successResponseWithData('success', this.adapter.find());
-      }
-    }
-  },
+				return apiResponse.badRequestResponse('Not exists');
+			}
+		},
+		list: {
+			async handler(ctx) {
+				return apiResponse.successResponseWithData('success', this.adapter.find());
+			}
+		}
+	},
 
-  /**
+	/**
    * Events
    */
-  events: {},
+	events: {},
 
-  /**
+	/**
    * Methods
    */
-  methods: {},
+	methods: {},
 
-  /**
+	/**
    * Service created lifecycle event handler
    */
-  created() {},
+	created() {},
 
-  /**
+	/**
    * Service started lifecycle event handler
    */
-  started() {},
+	started() {},
 
-  /**
+	/**
    * Service stopped lifecycle event handler
    */
-  stopped() {},
+	stopped() {}
 };
