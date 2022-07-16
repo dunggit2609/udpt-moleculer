@@ -49,6 +49,7 @@ module.exports = {
 					'GET /orders/getDeliveringOrderByShipper': 'orders.getDeliveringOrderByShipper',
 					'GET /orders/getNewOrderByShipper': 'orders.getNewOrderByShipper',
 					'POST /orders/update-status': 'orders.updateStatus',
+					'POST /orders/updateOrderWithShipperId': 'orders.updateOrderWithShipperId',
 
 					'GET /orders/get/:id': 'orders.get',
 					'GET /orders/getAllByShop': 'orders.getAllByShop',
