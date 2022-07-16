@@ -1,47 +1,47 @@
-"use strict";
+'use strict';
 
-const DbService = require("moleculer-db");
+const DbService = require('moleculer-db');
 
-const getPagingData = require("../helpers/pagingData");
-var apiResponse = require("../helpers/apiResponse");
-const MongoDBAdapter = require("moleculer-db-adapter-mongo");
-const { ObjectID } = require("bson");
+const getPagingData = require('../helpers/pagingData');
+var apiResponse = require('../helpers/apiResponse');
+const MongoDBAdapter = require('moleculer-db-adapter-mongo');
+const { ObjectID } = require('bson');
 
 module.exports = {
-  name: "reviews",
+  name: 'reviews',
   mixins: [DbService],
   adapter: new MongoDBAdapter(
-    "mongodb+srv://admin1:123@cluster0.msdkr.mongodb.net/Review?retryWrites=true&w=majority",
+    'mongodb+srv://admin1:123@cluster0.msdkr.mongodb.net/Review?retryWrites=true&w=majority',
     { useUnifiedTopology: true }
   ),
-  collection: "Review",
+  collection: 'Review',
   /**
    * Service settings
    */
   settings: {
     fields: [
-      "_id",
-      "product",
-      "author",
-      "rate",
-      "content",
-      "replyList",
-      "created_at",
-      "updated_at",
+      '_id',
+      'product',
+      'author',
+      'rate',
+      'content',
+      'replyList',
+      'created_at',
+      'updated_at',
     ],
     populates: {
       author: {
-        action: "customers.get",
+        action: 'customers.get',
         params: {
           populate: [],
-          fields: ["_id", "full_name", "email"],
+          fields: ['_id', 'full_name', 'email'],
         },
       },
       product: {
-        action: "products.get",
+        action: 'products.get',
         params: {
           populate: [],
-          fields: ["_id", "name"],
+          fields: ['_id', 'name'],
         },
       },
     },
@@ -72,22 +72,25 @@ module.exports = {
     },
     create: {
       async handler(ctx) {
-        const { content, rate, productID } = ctx.params;
-        const user_id = ctx.meta.user.user_id;
+        const key = Object.keys(ctx.params)[0];
+        const { content, rate, productID } = JSON.parse(key);
+        console.log(key);
+        console.log(content, rate, productID);
+        // const { user_id } = ctx.meta.user;
         let newReview = {
           _id: new ObjectID(),
           content: content,
           rate: rate,
           productID: productID,
-          author: user_id,
+          // author: user_id,
           created_at: new Date(),
           updated_at: new Date(),
         };
+        const { data: product } = await ctx.call('products.get', {
+          id: productID,
+        });
 
         const review = await this.adapter.insert(newReview);
-        if (!review) {
-          return apiResponse.ErrorResponse('Created Failed');
-        }
 
         return apiResponse.successResponseWithData('success', review);
       },
@@ -101,8 +104,8 @@ module.exports = {
      */
     customerCreate: {
       params: {
-        productID: { type: "string" },
-        comment: { type: "object" },
+        productID: { type: 'string' },
+        comment: { type: 'object' },
       },
       async handler(ctx) {
         let entity = ctx.params.comment;
@@ -119,16 +122,16 @@ module.exports = {
 
         let json = await this.transformDocuments(
           ctx,
-          { populate: ["author", "product"] },
+          { populate: ['author', 'product'] },
           doc
         );
         console.log(json);
 
-        await this.entityChanged("created", json, ctx);
+        await this.entityChanged('created', json, ctx);
         if (json) {
-          return apiResponse.successResponseWithData("success", json);
+          return apiResponse.successResponseWithData('success', json);
         }
-        return apiResponse.badRequestResponse("create fail");
+        return apiResponse.badRequestResponse('create fail');
       },
     },
     /**
@@ -143,11 +146,11 @@ module.exports = {
      */
     update: {
       params: {
-        id: { type: "string" },
+        id: { type: 'string' },
         comment: {
-          type: "object",
+          type: 'object',
           props: {
-            content: { type: "string", min: 1 },
+            content: { type: 'string', min: 1 },
           },
         },
       },
@@ -166,24 +169,24 @@ module.exports = {
         const doc = await this.adapter.updateById(ctx.params.id, update);
         const json = await this.transformDocuments(
           ctx,
-          { populate: ["author"] },
+          { populate: ['author'] },
           doc
         );
-        await this.entityChanged("updated", json, ctx);
+        await this.entityChanged('updated', json, ctx);
         if (json) {
-          return apiResponse.successResponseWithData("success", json);
+          return apiResponse.successResponseWithData('success', json);
         }
-        return apiResponse.badRequestResponse("update fail");
+        return apiResponse.badRequestResponse('update fail');
       },
     },
 
     reply: {
       params: {
-        id: { type: "string" },
+        id: { type: 'string' },
         comment: {
-          type: "object",
+          type: 'object',
           props: {
-            content: { type: "string", min: 1 },
+            content: { type: 'string', min: 1 },
           },
         },
       },
@@ -211,14 +214,14 @@ module.exports = {
         const doc = await this.adapter.updateById(ctx.params.id, update);
         const json = await this.transformDocuments(
           ctx,
-          { populate: ["author"] },
+          { populate: ['author'] },
           doc
         );
-        await this.entityChanged("updated", json, ctx);
+        await this.entityChanged('updated', json, ctx);
         if (json) {
-          return apiResponse.successResponseWithData("success", json);
+          return apiResponse.successResponseWithData('success', json);
         }
-        return apiResponse.badRequestResponse("update fail");
+        return apiResponse.badRequestResponse('update fail');
       },
     },
 
@@ -234,9 +237,9 @@ module.exports = {
      */
     listByProduct: {
       params: {
-        productID: { type: "string" },
-        limit: { type: "number", optional: true, convert: true },
-        offset: { type: "number", optional: true, convert: true },
+        productID: { type: 'string' },
+        limit: { type: 'number', optional: true, convert: true },
+        offset: { type: 'number', optional: true, convert: true },
       },
       async handler(ctx) {
         const limit = ctx.params.limit ? Number(ctx.params.limit) : 20;
@@ -245,8 +248,8 @@ module.exports = {
         let params = {
           limit,
           offset,
-          sort: ["-created_at"],
-          populate: ["author"],
+          sort: ['-created_at'],
+          populate: ['author'],
           query: {
             productID: ctx.params.productID,
           },
@@ -273,15 +276,15 @@ module.exports = {
         };
 
         if (result.commentsCount > 0) {
-          return apiResponse.successResponseWithData("success", result);
+          return apiResponse.successResponseWithData('success', result);
         }
-        return apiResponse.badRequestResponse("Not exists");
+        return apiResponse.badRequestResponse('Not exists');
       },
     },
     list: {
       params: {
-        limit: { type: "number", optional: true, convert: true },
-        offset: { type: "number", optional: true, convert: true },
+        limit: { type: 'number', optional: true, convert: true },
+        offset: { type: 'number', optional: true, convert: true },
       },
       async handler(ctx) {
         const limit = ctx.params.limit ? Number(ctx.params.limit) : 20;
@@ -290,8 +293,8 @@ module.exports = {
         let params = {
           limit,
           offset,
-          sort: ["-created_at"],
-          populate: ["author", "product"],
+          sort: ['-created_at'],
+          populate: ['author', 'product'],
         };
         let countParams;
 
@@ -315,9 +318,9 @@ module.exports = {
         };
 
         if (result.commentsCount > 0) {
-          return apiResponse.successResponseWithData("success", result);
+          return apiResponse.successResponseWithData('success', result);
         }
-        return apiResponse.badRequestResponse("Not exists");
+        return apiResponse.badRequestResponse('Not exists');
       },
     },
 
@@ -332,14 +335,14 @@ module.exports = {
      */
     remove: {
       params: {
-        id: { type: "any" },
+        id: { type: 'any' },
       },
       async handler(ctx) {
         const comment = await this.getById(ctx.params.id);
         if (comment.author !== ctx.meta.user.user_id.toString())
           throw new ForbiddenError();
         const json = await this.adapter.removeById(ctx.params.id);
-        await this.entityChanged("removed", json, ctx);
+        await this.entityChanged('removed', json, ctx);
         return json;
       },
     },
@@ -348,10 +351,10 @@ module.exports = {
         let data = await this.getById(ctx.params.id);
         data = JSON.parse(JSON.stringify(data));
         if (data) {
-          return apiResponse.successResponseWithData("success", data);
+          return apiResponse.successResponseWithData('success', data);
         }
 
-        return apiResponse.badRequestResponse("Not exists");
+        return apiResponse.badRequestResponse('Not exists');
       },
     },
     getAll: {

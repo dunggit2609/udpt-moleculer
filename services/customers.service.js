@@ -147,7 +147,8 @@ module.exports = {
           if (!ctx.meta.user) {
             return new apiResponse.unauthorizedResponse('Unauthorized');
           }
-          const { address, phone } = ctx.params;
+          const key = Object.keys(ctx.params)[0];
+          const { address, phone } = JSON.parse(key);
           const payload = { address, phone, updated_at: new Date() };
           const customer = this.adapter.updateById(
             user_id,
@@ -176,6 +177,17 @@ module.exports = {
         if (data) {
           return apiResponse.successResponseWithData('Success', data);
         }
+      },
+    },
+
+    getProductById: {
+      async handler(ctx) {
+        const id = ctx.params.id;
+        const data = await ctx.call('products.get', {
+          id: id,
+        });
+        const { data: product } = data;
+        return apiResponse.successResponseWithData('Success', product);
       },
     },
   },

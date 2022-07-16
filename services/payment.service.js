@@ -39,10 +39,22 @@ module.exports = {
     getByPaymentID: {
       async handler(ctx) {
         let data = await this.adapter.find({
-          query: { productID: ctx.params.payment_id },
+          query: { _id: ObjectID(ctx.params.payment_id) },
         });
         data = data[0];
+        console.log(ctx.params.payment_id);
         return apiResponse.successResponseWithData('success', data);
+      },
+    },
+    getAll: {
+      async handler(ctx) {
+        let data = await this.adapter.find();
+        data = JSON.parse(JSON.stringify(data));
+        if (data) {
+          return apiResponse.successResponseWithData('success', data);
+        }
+
+        return apiResponse.badRequestResponse('Not exists');
       },
     },
   },
