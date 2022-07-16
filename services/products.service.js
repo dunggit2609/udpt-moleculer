@@ -161,6 +161,11 @@ module.exports = {
     get: {
       async handler(ctx) {
         let data = await this.getById(new ObjectID(ctx.params.id));
+      }
+    },
+    getAll: {
+      async handler(ctx) {
+        let data = await this.adapter.find();
         data = JSON.parse(JSON.stringify(data));
         if (data) {
           return apiResponse.successResponseWithData('success', data);
@@ -170,9 +175,66 @@ module.exports = {
       },
     },
 
-		getAll: {
+    getAllProductByShop: {
+      async handler(ctx) {
+        console.log('params._id: ', ctx.params.id);
+        let data = await this.adapter.find({ query: { shop_id: ctx.params.id } });
+        data = JSON.parse(JSON.stringify(data));
+        if (data) {
+          return apiResponse.successResponseWithData('success', data);
+        }
+
+        return apiResponse.badRequestResponse('Not exists');
+      }
+    },
+    cusGetAllProductByShop: {
+      params: {
+        page: { type: 'number', optional: true, convert: true },
+        size: { type: 'number', optional: true, convert: true },
+        search: { type: 'string', optional: true, convert: true },
+        shop_id: { type: 'string', optional: true, convert: true },
+      },
+      async handler(ctx) {
+        const page = ctx.params.page ? Number(ctx.params.page) : 1;
+        const size = ctx.params.size ? Number(ctx.params.size) : 10;
+        const search = ctx.params.search ?? '';
+        const shop_id = ctx.params.shop_id
+        const res = await this.adapter.find({ query: { shop_id: new ObjectID(shop_id) } });
+
+        let data = res.filter(x => !search || x.name.includes(search) || x.email.includes(search) || x.phone.includes(search));
+        data.forEach(x => {
+          x._id = `${x._id}`;
+        })
+        const { response, totalItems } = getPagingData(data, page, size)
+        const result = {
+          response, totalItems, page
+        };
+
+
+        return apiResponse.successResponseWithData("success", result);
+
+      }
+    },
+    cusGetAllByIds: {
+      async handler(ctx) {
+        let ids = ctx.params.ids;
+        ids = ids.split(",");
+        let data = await this.adapter.find();
+
+        data = data.filter((x) => ids.includes(`${x._id}`));
+        if (data.length > 0) {
+          return apiResponse.successResponseWithData('success', data);
+
+        }
+
+        return apiResponse.successResponseWithData('success', null);
+
+
+      }
+    },
+    get: {
 			async handler(ctx) {
-				let data = await this.adapter.find();
+				let data = await this.getById(new ObjectID(ctx.params.id));
 				data = JSON.parse(JSON.stringify(data));
 				if (data) {
 					return apiResponse.successResponseWithData('success', data);
@@ -181,7 +243,6 @@ module.exports = {
 				return apiResponse.badRequestResponse('Not exists');
 			}
 		},
-
 		create: {
 			async handler(ctx) {
 				try {
@@ -234,11 +295,10 @@ module.exports = {
 			async handler(ctx) {
 				const limit = ctx.params.limit ? Number(ctx.params.limit) : 20;
 				const offset = ctx.params.offset ? Number(ctx.params.offset) : 0;
-				const shop_id = ctx.meta.user.user_id;
+				let shop_id = ctx.meta.user.user_id;
 				let params = {
 					limit,
 					offset,
-					shop_id,
 					sort: [ '-created_at' ]
 				};
 				let countParams;
@@ -250,12 +310,16 @@ module.exports = {
 
 				const res = await this.Promise.all([
 					// Get rows
-					this.adapter.find(params),
-
+					this.adapter.find({
+						query: { shop_id: new ObjectID(ctx.meta.user.user_id) },
+						limit: params.limit,
+						offset: params.offset,
+						sort: [ '-created_at' ]
+					}),
+					// this.adapter.find(params),
 					// Get count of all rows
-					this.adapter.count(countParams)
+					this.adapter.count({ query: { shop_id: new ObjectID(ctx.meta.user.user_id) } })
 				]);
-
 				const docs = await this.transformDocuments(ctx, params, res[0]);
 				const result = {
 					products: docs,
@@ -283,15 +347,15 @@ module.exports = {
   /**
    * Service created lifecycle event handler
    */
-  created() {},
+  created() { },
 
   /**
    * Service started lifecycle event handler
    */
-  started() {},
+  started() { },
 
   /**
    * Service stopped lifecycle event handler
    */
-  stopped() {},
+  stopped() { },
 };

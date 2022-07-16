@@ -79,14 +79,17 @@ module.exports = {
       params: {
         limit: { type: "number", optional: true, convert: true },
         offset: { type: "number", optional: true, convert: true },
+        search: { type: "string", optional: true, convert: true },
       },
       async handler(ctx) {
         const limit = ctx.params.limit ? Number(ctx.params.limit) : 20;
         const offset = ctx.params.offset ? Number(ctx.params.offset) : 0;
-
+        const search = ctx.params.search ?? '';
+        console.log(search)
         let params = {
           limit,
           offset,
+          search,
           sort: ["-created_at"],
         };
         let countParams;
@@ -116,6 +119,36 @@ module.exports = {
         return apiResponse.badRequestResponse("Not exists");
       },
     },
+    updateShopStatus: {
+      params: {
+        id: {type: "string"},
+      },
+      async handler(ctx) {
+        const newData = {
+          isActive: true,
+        }
+        const update = {
+          $set: newData,
+        }
+        const doc = await this.adapter.updateById(ctx.params.id, update);
+
+        await this.entityChanged("updated", doc, ctx);
+        if (doc) {
+          return apiResponse.successResponseWithData("success", doc);
+        }
+        return apiResponse.badRequestResponse("update fail");
+      }
+    },
+
+		getById: {
+			async handler(ctx) {
+				let data = await this.getById(new ObjectID(ctx.params.id));
+
+				if (data) {
+					return data;
+				}
+			}
+		},
 
 		getAll: {
 			async handler(ctx) {}
@@ -179,7 +212,7 @@ module.exports = {
 
 		insertProduct: {
 			async handler(ctx) {
-				const shop_id = ctx.meta.user.user_id;
+				const shop_id = new ObjectID(ctx.meta.user.user_id);
 				console.log('shop_id: ', shop_id);
 				const payload = JSON.parse(Object.keys(ctx.params)[0]);
 				console.log(payload);
@@ -245,7 +278,37 @@ module.exports = {
 					return apiResponse.badRequestResponse('Cannot find products');
 				}
 			}
-		}
+		}, 
+    listShop: {
+      params: {
+        page: { type: "number", optional: true, convert: true },
+        size: { type: "number", optional: true, convert: true },
+        search: { type: "string", optional: true, convert: true },
+      },
+      async handler(ctx) {
+        const page = ctx.params.page ? Number(ctx.params.page) : 1;
+        const size = ctx.params.size ? Number(ctx.params.size) : 10;
+        const search = ctx.params.search ?? '';
+
+        const res = await this.adapter.find();
+
+        const data = res.filter(x => !search || x.name.includes(search) || x.email.includes(search) || x.phone.includes(search));
+        const {response, totalItems} = getPagingData(data, page, size)
+
+        const result = {
+          shops: response,
+          shopCount: totalItems,
+          page: page
+        };
+
+        console.log("zxc", result)
+
+        if (result.shopCount > 0) {
+          return apiResponse.successResponseWithData("success", result);
+        }
+        return apiResponse.badRequestResponse("Not exists");
+      },
+    },
   },
   /**
   actions: {

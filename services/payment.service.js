@@ -57,6 +57,11 @@ module.exports = {
         return apiResponse.badRequestResponse('Not exists');
       },
     },
+    list: {
+      async handler(ctx) {
+        return apiResponse.successResponseWithData('success', this.adapter.find());
+      }
+    }
   },
 
   /**

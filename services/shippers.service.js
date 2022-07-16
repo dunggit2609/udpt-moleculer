@@ -6,7 +6,7 @@ const getPagingData = require("../helpers/pagingData");
 var apiResponse = require("../helpers/apiResponse");
 const MongoDBAdapter = require("moleculer-db-adapter-mongo");
 const { ObjectID } = require("bson");
-const {format} = require("date-fns")
+const { format } = require("date-fns")
 module.exports = {
   name: 'shippers',
   mixins: [DbService],
@@ -52,7 +52,52 @@ module.exports = {
    * Actions
    */
   actions: {
-  
+    listShipper: {
+      params: {
+        limit: { type: 'number', optional: true, convert: true },
+        offset: { type: 'number', optional: true, convert: true }
+      },
+      async handler(ctx) {
+        console.log('in listshipper');
+        const limit = ctx.params.limit ? Number(ctx.params.limit) : 20;
+        const offset = ctx.params.offset ? Number(ctx.params.offset) : 0;
+        let params = {
+          limit,
+          offset,
+          sort: ['-created_at']
+        };
+        let countParams;
+
+        countParams = Object.assign({}, params);
+        // Remove pagination params
+        if (countParams && countParams.limit) countParams.limit = null;
+        if (countParams && countParams.offset) countParams.offset = null;
+
+        const res = await this.Promise.all([
+          // Get rows
+          this.adapter.find({
+            limit: params.limit,
+            offset: params.offset,
+            sort: ['-created_at']
+          }),
+
+          // Get count of all rows
+          this.adapter.count(countParams)
+        ]);
+
+        // const docs = await this.transformDocuments(ctx, params, res[0]);
+        // const r = await this.transformResult(ctx, docs);
+        const docs = await this.transformDocuments(ctx, params, res[0]);
+        const result = {
+          shipper: docs,
+          shipperCount: res[1]
+        };
+        if (result.shipperCount > 0) {
+          return apiResponse.successResponseWithData('success', result);
+        }
+        return apiResponse.badRequestResponse('Not exists');
+      }
+    },
     getByUserId: {
       async handler(ctx) {
         let data = await this.adapter.find({
@@ -84,7 +129,7 @@ module.exports = {
         if (!ctx.meta.user || !ctx.meta.user.user_id) {
           return;
         }
-        
+
         const payload = JSON.parse(Object.keys(ctx.params)[0]);
         const shipper_id = ctx.meta.user.user_id;
         try {
@@ -108,16 +153,17 @@ module.exports = {
       params: {
         limit: { type: "number", optional: true, convert: true },
         offset: { type: "number", optional: true, convert: true },
+        search: { type: "string", optional: true, convert: true },
       },
       async handler(ctx) {
         const limit = ctx.params.limit ? Number(ctx.params.limit) : 20;
         const offset = ctx.params.offset ? Number(ctx.params.offset) : 0;
-
+        const search = ctx.params.search ?? '';
         let params = {
           limit,
           offset,
+          search,
           sort: ["-created_at"],
-          populate: ["orders"],
         };
         let countParams;
 
@@ -163,16 +209,16 @@ module.exports = {
 
           const fromDate = from
             ? new Date(
-                format(
-                  typeof from === "string" ? new Date(from) : from,
-                  "yyyy-MM-dd"
-                )
+              format(
+                typeof from === "string" ? new Date(from) : from,
+                "yyyy-MM-dd"
               )
+            )
             : null;
           const toDate = to
             ? new Date(
-                format(typeof to === "string" ? new Date(to) : to, "yyyy-MM-dd")
-              )
+              format(typeof to === "string" ? new Date(to) : to, "yyyy-MM-dd")
+            )
             : null;
 
           heathHistory = heathHistory.filter((x) => {
@@ -196,7 +242,7 @@ module.exports = {
         }
       }
     }
-   
+
   },
 
   /**
@@ -247,15 +293,15 @@ module.exports = {
   /**
    * Service created lifecycle event handler
    */
-  created() {},
+  created() { },
 
   /**
    * Service started lifecycle event handler
    */
-  started() {},
+  started() { },
 
   /**
    * Service stopped lifecycle event handler
    */
-  stopped() {},
+  stopped() { },
 };
