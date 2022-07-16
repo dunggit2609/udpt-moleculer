@@ -84,7 +84,7 @@ module.exports = {
 			async handler(ctx) {
 				const limit = ctx.params.limit ? Number(ctx.params.limit) : 20;
 				const offset = ctx.params.offset ? Number(ctx.params.offset) : 0;
-				// const search = ctx.params.search ?? '';
+				const search = ctx.params.search ? ctx.params.search : '';
 				console.log(search);
 				let params = {
 					limit,
@@ -288,7 +288,7 @@ module.exports = {
 			async handler(ctx) {
 				const page = ctx.params.page ? Number(ctx.params.page) : 1;
 				const size = ctx.params.size ? Number(ctx.params.size) : 10;
-				// const search = ctx.params.search ?? '';
+				const search = ctx.params.search ?? '';
 
 				const res = await this.adapter.find();
 

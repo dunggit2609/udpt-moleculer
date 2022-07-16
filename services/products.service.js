@@ -164,7 +164,7 @@ module.exports = {
 			async handler(ctx) {
 				const page = ctx.params.page ? Number(ctx.params.page) : 1;
 				const size = ctx.params.size ? Number(ctx.params.size) : 10;
-				// const search = ctx.params.search ?? '';
+				const search = ctx.params.search ? ctx.params.search : '';
 				const shop_id = ctx.params.shop_id;
 				const res = await this.adapter.find({ query: { shop_id: new ObjectID(shop_id) } });
 
