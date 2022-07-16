@@ -140,6 +140,16 @@ module.exports = {
       }
     },
 
+		getById: {
+			async handler(ctx) {
+				let data = await this.getById(new ObjectID(ctx.params.id));
+
+				if (data) {
+					return data;
+				}
+			}
+		},
+
 		getAll: {
 			async handler(ctx) {}
 		},
@@ -202,7 +212,7 @@ module.exports = {
 
 		insertProduct: {
 			async handler(ctx) {
-				const shop_id = ctx.meta.user.user_id;
+				const shop_id = new ObjectID(ctx.meta.user.user_id);
 				console.log('shop_id: ', shop_id);
 				const payload = JSON.parse(Object.keys(ctx.params)[0]);
 				console.log(payload);

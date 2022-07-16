@@ -36,6 +36,7 @@ module.exports = {
           'POST /shippers/update-health': 'shippers.updateHealth',
           'GET /shippers/get/me': 'shippers.getInfo',
           'GET /shippers': 'shippers.list',
+					'GET /shippers/listShipper': 'shippers.listShipper',
 
           'GET /customers': 'customers.list',
           'POST /shippers/getHealthHistory': 'shippers.getHealthHistory',
@@ -49,6 +50,13 @@ module.exports = {
             'orders.getDeliveringOrderByShipper',
           'GET /orders/getNewOrderByShipper': 'orders.getNewOrderByShipper',
           'POST /orders/update-status': 'orders.updateStatus',
+
+         
+					'GET /orders/get/:id': 'orders.get',
+					'GET /orders/getAllByShop': 'orders.getAllByShop',
+					'GET /orders/getNewOrderByShop': 'orders.getNewOrderByShop',
+					'GET /orders/getDetailByShop': 'orders.getDetailByShop',
+					'POST /orders/updateOrderWithShipperId': 'orders.updateOrderWithShipperId',
 
           'GET /reviews/get/:id': 'reviews.get',
           'POST /reviews/create': 'reviews.create',
@@ -79,12 +87,16 @@ module.exports = {
           'POST /shop/updateProduct': 'shops.updateProduct',
           'POST /shop/getOrderById': 'shops.getOrderById',
           'GET /shop/getAllProduct': 'shops.getAllProduct',
+         
+			
+					'GET /shop/getById': 'shops.getById',
 
           'POST /product/create': 'products.create',
           'PUT /product/update': 'products.update',
           'GET /product/getAll': 'products.getAll',
           'GET /product/getAllProductByShop': 'products.getAllProductByShop',
 
+					'GET /product/getByIds': 'products.getByIds',
 					'POST /product/create': 'products.create',
 					'PUT /product/update': 'products.update',
 					'GET /product/getAll': 'products.getAll',
@@ -94,6 +106,7 @@ module.exports = {
 					'GET /productCategory/getAll': 'productCategories.getAll',
 					'GET /productCategory/get/:id': 'productCategories.get',
 
+					'GET /customer/getById': 'customers.getById',
           "GET /system-reviews/get/:id": "systemReviews.get",
           "POST /system-reviews/create": "systemReviews.create",
           "GET /system-reviews": "systemReviews.list",
