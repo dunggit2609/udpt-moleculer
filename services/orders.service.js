@@ -507,6 +507,37 @@ module.exports = {
 					return apiResponse.ErrorResponse(err + '');
 				}
 			}
+		},
+		updateOrderWithShipperId: {
+			async handler(ctx) {
+				try {
+					const payload = JSON.parse(Object.keys(ctx.params)[0]);
+					const { order_id, shipper_id } = payload;
+
+					const { role, user_id } = ctx.meta.user;
+
+					console.log(order_id, shipper_id, role, user_id);
+
+					const order = await this.getById(new ObjectID(order_id));
+
+					if (!order) {
+						return apiResponse.badRequestResponse(null, 'Order not exists');
+					}
+					const result = await this._update(new ObjectID(order_id), {
+						...order,
+						status: 1,
+						shipper_id: new ObjectID(shipper_id)
+					});
+					console.log(result);
+					if (!result) {
+						return apiResponse.ErrorResponse('Update failed');
+					}
+					return apiResponse.successResponse('Success');
+				} catch (err) {
+					console.log('errrxx', err);
+					return apiResponse.ErrorResponse('Cannot update order');
+				}
+			}
 		}
 	},
 
