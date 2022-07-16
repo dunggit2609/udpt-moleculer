@@ -45,6 +45,11 @@ module.exports = {
         return apiResponse.successResponseWithData('success', data);
       },
     },
+    list: {
+      async handler(ctx) {
+        return apiResponse.successResponseWithData('success', this.adapter.find());
+      }
+    }
   },
 
   /**

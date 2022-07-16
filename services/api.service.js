@@ -59,6 +59,9 @@ module.exports = {
 
           "GET /shops": "shops.list",
           "PUT /shops/update-status/:id": "shops.updateShopStatus",
+          'GET /shops/listShop': 'shops.listShop',
+          'POST /products/cusGetAllProductByShop': 'products.cusGetAllProductByShop',
+          'GET /products/cusGetAllByIds': 'products.cusGetAllByIds',
 
           'POST /orders': 'orders.createOrder',
 
@@ -89,7 +92,9 @@ module.exports = {
 					'GET /product/getProductByShop': 'products.getProductByShop',
 
 					'GET /productCategory/getAll': 'productCategories.getAll',
-					'GET /productCategory/get/:id': 'productCategories.get'
+					'GET /productCategory/get/:id': 'productCategories.get',
+
+					'GET /payments': 'payments.list'
 				},
 				onBeforeCall(ctx, route, req, res) {
 					let accessToken = req.headers['authorization'];

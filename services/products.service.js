@@ -66,7 +66,7 @@ module.exports = {
     },
 
     getAll: {
-      async handler(ctx) {},
+      async handler(ctx) { },
     },
     subInventory: {
       async handler(ctx) {
@@ -94,119 +94,164 @@ module.exports = {
           totalItems
         );
       },
-    
+
     },
-		getAll: {
-			async handler(ctx) {
-				let data = await this.adapter.find();
-				data = JSON.parse(JSON.stringify(data));
-				if (data) {
-					return apiResponse.successResponseWithData('success', data);
-				}
+    getAll: {
+      async handler(ctx) {
+        let data = await this.adapter.find();
+        data = JSON.parse(JSON.stringify(data));
+        if (data) {
+          return apiResponse.successResponseWithData('success', data);
+        }
 
-				return apiResponse.badRequestResponse('Not exists');
-			}
-		},
+        return apiResponse.badRequestResponse('Not exists');
+      }
+    },
 
-		getAllProductByShop: {
-			async handler(ctx) {
-				console.log('params._id: ', ctx.params.id);
-				let data = await this.adapter.find({ query: { shop_id: ctx.params.id } });
-				data = JSON.parse(JSON.stringify(data));
-				if (data) {
-					return apiResponse.successResponseWithData('success', data);
-				}
+    getAllProductByShop: {
+      async handler(ctx) {
+        console.log('params._id: ', ctx.params.id);
+        let data = await this.adapter.find({ query: { shop_id: ctx.params.id } });
+        data = JSON.parse(JSON.stringify(data));
+        if (data) {
+          return apiResponse.successResponseWithData('success', data);
+        }
 
-				return apiResponse.badRequestResponse('Not exists');
-			}
-		},
+        return apiResponse.badRequestResponse('Not exists');
+      }
+    },
 
-		create: {
-			async handler(ctx) {
-				try {
-					console.log(ctx.params);
-					const curDate = new Date();
-					const { name, description, inventory, unit_price, unit, product_type, shop_id } = ctx.params;
-					const data = await this.adapter.insert({
-						name,
-						description,
-						inventory,
-						unit_price,
-						unit,
-						product_type,
-						shop_id,
-						created_at: curDate,
-						updated_at: curDate
-					});
-					return apiResponse.successResponseWithData('successful create new product', data);
-				} catch (err) {
-					return apiResponse.badRequestResponse('Cannot create a product');
-				}
-			}
-		},
+    create: {
+      async handler(ctx) {
+        try {
+          console.log(ctx.params);
+          const curDate = new Date();
+          const { name, description, inventory, unit_price, unit, product_type, shop_id } = ctx.params;
+          const data = await this.adapter.insert({
+            name,
+            description,
+            inventory,
+            unit_price,
+            unit,
+            product_type,
+            shop_id,
+            created_at: curDate,
+            updated_at: curDate
+          });
+          return apiResponse.successResponseWithData('successful create new product', data);
+        } catch (err) {
+          return apiResponse.badRequestResponse('Cannot create a product');
+        }
+      }
+    },
 
-		update: {
-			async handler(ctx) {
-				try {
-					let { product_id, ...updateProduct } = ctx.params;
-					console.log(updateProduct);
-					let curProduct = await this.getById(new ObjectID(product_id));
-					console.log('curProduct: ', curProduct);
-					let result = await this.adapter.updateById(
-						product_id,
-						{ $set: { ...updateProduct } },
-						{ new: true }
-					);
-					console.log('result: ', result);
-					return apiResponse.successResponseWithData('successful update product', result);
-				} catch (err) {
-					return apiResponse.badRequestResponse('Cannot create a product');
-				}
-			}
-		},
+    update: {
+      async handler(ctx) {
+        try {
+          let { product_id, ...updateProduct } = ctx.params;
+          console.log(updateProduct);
+          let curProduct = await this.getById(new ObjectID(product_id));
+          console.log('curProduct: ', curProduct);
+          let result = await this.adapter.updateById(
+            product_id,
+            { $set: { ...updateProduct } },
+            { new: true }
+          );
+          console.log('result: ', result);
+          return apiResponse.successResponseWithData('successful update product', result);
+        } catch (err) {
+          return apiResponse.badRequestResponse('Cannot create a product');
+        }
+      }
+    },
 
-		getProductByShop: {
-			params: {
-				limit: { type: 'number', optional: true, convert: true },
-				offset: { type: 'number', optional: true, convert: true }
-			},
-			async handler(ctx) {
-				const limit = ctx.params.limit ? Number(ctx.params.limit) : 20;
-				const offset = ctx.params.offset ? Number(ctx.params.offset) : 0;
-				const shop_id = ctx.meta.user.user_id;
-				let params = {
-					limit,
-					offset,
-					shop_id,
-					sort: [ '-created_at' ]
-				};
-				let countParams;
+    getProductByShop: {
+      params: {
+        limit: { type: 'number', optional: true, convert: true },
+        offset: { type: 'number', optional: true, convert: true }
+      },
+      async handler(ctx) {
+        const limit = ctx.params.limit ? Number(ctx.params.limit) : 20;
+        const offset = ctx.params.offset ? Number(ctx.params.offset) : 0;
+        const shop_id = ctx.meta.user.user_id;
+        let params = {
+          limit,
+          offset,
+          shop_id,
+          sort: ['-created_at']
+        };
+        let countParams;
 
-				countParams = Object.assign({}, params);
-				// Remove pagination params
-				if (countParams && countParams.limit) countParams.limit = null;
-				if (countParams && countParams.offset) countParams.offset = null;
+        countParams = Object.assign({}, params);
+        // Remove pagination params
+        if (countParams && countParams.limit) countParams.limit = null;
+        if (countParams && countParams.offset) countParams.offset = null;
 
-				const res = await this.Promise.all([
-					// Get rows
-					this.adapter.find(params),
+        const res = await this.Promise.all([
+          // Get rows
+          this.adapter.find(params),
 
-					// Get count of all rows
-					this.adapter.count(countParams)
-				]);
+          // Get count of all rows
+          this.adapter.count(countParams)
+        ]);
 
-				const docs = await this.transformDocuments(ctx, params, res[0]);
-				const result = {
-					products: docs,
-					productCount: res[1]
-				};
+        const docs = await this.transformDocuments(ctx, params, res[0]);
+        const result = {
+          products: docs,
+          productCount: res[1]
+        };
 
-				if (result.productCount > 0) {
-					return apiResponse.successResponseWithData('success', result);
-				}
-				return apiResponse.badRequestResponse('Not exists');
-			}
-		}
+        if (result.productCount > 0) {
+          return apiResponse.successResponseWithData('success', result);
+        }
+        return apiResponse.badRequestResponse('Not exists');
+      }
+    },
+    cusGetAllProductByShop: {
+      params: {
+        page: { type: 'number', optional: true, convert: true },
+        size: { type: 'number', optional: true, convert: true },
+        search: { type: 'string', optional: true, convert: true },
+        shop_id: { type: 'string', optional: true, convert: true },
+      },
+      async handler(ctx) {
+        const page = ctx.params.page ? Number(ctx.params.page) : 1;
+        const size = ctx.params.size ? Number(ctx.params.size) : 10;
+        const search = ctx.params.search ?? '';
+        const shop_id = ctx.params.shop_id
+        const res = await this.adapter.find({ query: { shop_id: new ObjectID(shop_id) } });
+
+        let data = res.filter(x => !search || x.name.includes(search) || x.email.includes(search) || x.phone.includes(search));
+        data.forEach(x => {
+          x._id = `${x._id}`;
+        })
+        const { response, totalItems } = getPagingData(data, page, size)
+        const result = {
+          response, totalItems, page
+        };
+
+
+        return apiResponse.successResponseWithData("success", result);
+
+      }
+    },
+    cusGetAllByIds: {
+      async handler(ctx) {
+        let ids = ctx.params.ids;
+        ids = ids.split(",");
+        let data = await this.adapter.find();
+
+        data = data.filter((x) => ids.includes(`${x._id}`));
+        if (data.length > 0) {
+          return apiResponse.successResponseWithData('success', data);
+
+        }
+
+        return apiResponse.successResponseWithData('success', null);
+
+
+      }
+    }
   },
 
   /**
@@ -222,15 +267,15 @@ module.exports = {
   /**
    * Service created lifecycle event handler
    */
-  created() {},
+  created() { },
 
   /**
    * Service started lifecycle event handler
    */
-  started() {},
+  started() { },
 
   /**
    * Service stopped lifecycle event handler
    */
-  stopped() {},
+  stopped() { },
 };
