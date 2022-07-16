@@ -10,319 +10,291 @@ const { USER_ROLE_SHIPPER } = require('../constant');
 const { MoleculerError } = require('moleculer').Errors;
 const { format } = require('date-fns');
 module.exports = {
-  name: 'orders',
-  mixins: [DbService],
-  adapter: new MongoDBAdapter(
-    'mongodb+srv://admin1:123@cluster0.msdkr.mongodb.net/Order?retryWrites=true&w=majority',
-    { useUnifiedTopology: true }
-  ),
-  collection: 'Order',
-  /**
+	name: 'orders',
+	mixins: [ DbService ],
+	adapter: new MongoDBAdapter(
+		'mongodb+srv://thangbach:123@cluster0.msdkr.mongodb.net/Order?retryWrites=true&w=majority',
+		{ useUnifiedTopology: true }
+	),
+	collection: 'Order',
+	/**
    * Service settings
    */
-  settings: {
-    fields: [
-      '_id',
-      'payment',
-      'review',
-      'customer_id',
-      'shipper_id',
-      'total_cost',
-      'total_product',
-      'status',
-      'note',
-      'product',
-      'shop_id',
-      'created_at',
-      'updated_at',
-    ],
-  },
+	settings: {
+		fields: [
+			'_id',
+			'payment',
+			'review',
+			'customer_id',
+			'shipper_id',
+			'total_cost',
+			'total_product',
+			'status',
+			'note',
+			'product',
+			'shop_id',
+			'created_at',
+			'updated_at'
+		]
+	},
 
-  /**
+	/**
    * Service metadata
    */
-  metadata: {},
+	metadata: {},
 
-  /**
+	/**
    * Service dependencies
    */
-  //dependencies: [],
+	//dependencies: [],
 
-  /**
+	/**
    * Actions
    */
-  actions: {
-    getDetailByShipper: {
-      async handler(ctx) {
-        if (!ctx.meta.user || !ctx.meta.user.user_id) {
-          return "Unauthorized";
-        }
+	actions: {
+		getDetailByShipper: {
+			async handler(ctx) {
+				if (!ctx.meta.user || !ctx.meta.user.user_id) {
+					return 'Unauthorized';
+				}
 
-        let data = await this.getById(new ObjectID(ctx.params.id));
-        data = JSON.parse(JSON.stringify(data));
+				let data = await this.getById(new ObjectID(ctx.params.id));
+				data = JSON.parse(JSON.stringify(data));
 
-        if (`${data.shipper_id}` !== ctx.meta.user.user_id) {
-          return "Forbidden";
-        }
+				if (`${data.shipper_id}` !== ctx.meta.user.user_id) {
+					return 'Forbidden';
+				}
 
-        const productIds = data.product.map((x) => x.product_id);
-        const products = await ctx.call('products.getByIds', productIds);
-        data.products = [];
-        if (products.length > 0) {
-          data.product.forEach((x) => {
-            const product = products.find(
-              (y) => `${y._id}` === `${x.product_id}`
-            );
-            if (product) {
-              x = { ...x, ...product };
-              data.products.push({ ...product, quantity: x.quantity });
-            }
-          });
-        }
-        delete data.product;
+				const productIds = data.product.map((x) => x.product_id);
+				const products = await ctx.call('products.getByIds', productIds);
+				data.products = [];
+				if (products.length > 0) {
+					data.product.forEach((x) => {
+						const product = products.find((y) => `${y._id}` === `${x.product_id}`);
+						if (product) {
+							x = { ...x, ...product };
+							data.products.push({ ...product, quantity: x.quantity });
+						}
+					});
+				}
+				delete data.product;
 
-        const customer = await ctx.call('customers.getById', {
-          id: data.customer_id,
-        });
+				const customer = await ctx.call('customers.getById', {
+					id: data.customer_id
+				});
 
-        if (customer) {
-          data.customer_info = customer;
-        }
+				if (customer) {
+					data.customer_info = customer;
+				}
 
-        const shop = await ctx.call('shops.getById', { id: data.shop_id });
+				const shop = await ctx.call('shops.getById', { id: data.shop_id });
 
-        if (shop) {
-          data.shop_info = shop;
-        }
+				if (shop) {
+					data.shop_info = shop;
+				}
 
-        if (data && data.customer_info) {
-          return apiResponse.successResponseWithData('success', data);
-        }
+				if (data && data.customer_info) {
+					return apiResponse.successResponseWithData('success', data);
+				}
 
-        return apiResponse.successResponseWithData('Not exists', null);
-      },
-    },
-    getDeliveringOrderByShipper: {
-      async handler(ctx) {
-        try {
-          if (!ctx.meta.user || !ctx.meta.user.user_id) {
-            return 'Unauthorized';
-          }
-          const shipper_id = ctx.meta.user.user_id;
-          const queries = {
-            status: '2',
-            shipper_id: new ObjectID(shipper_id),
-          };
+				return apiResponse.successResponseWithData('Not exists', null);
+			}
+		},
+		getDeliveringOrderByShipper: {
+			async handler(ctx) {
+				try {
+					if (!ctx.meta.user || !ctx.meta.user.user_id) {
+						return 'Unauthorized';
+					}
+					const shipper_id = ctx.meta.user.user_id;
+					const queries = {
+						status: '2',
+						shipper_id: new ObjectID(shipper_id)
+					};
 
-          Object.keys(queries).forEach((x) => {
-            if (
-              queries[x] === null ||
-              queries[x] === undefined ||
-              queries[x] == 'all'
-            ) {
-              delete queries[x];
-            }
-          });
+					Object.keys(queries).forEach((x) => {
+						if (queries[x] === null || queries[x] === undefined || queries[x] == 'all') {
+							delete queries[x];
+						}
+					});
 
-          let data = await this.adapter.find({
-            query: queries,
-          });
+					let data = await this.adapter.find({
+						query: queries
+					});
 
-          if (data && data.length > 0) {
-            const rs = await ctx.call('orders.getDetailByShipper', {
-              id: data[0]._id,
-            });
+					if (data && data.length > 0) {
+						const rs = await ctx.call('orders.getDetailByShipper', {
+							id: data[0]._id
+						});
 
-            if (!rs.success) {
-              return apiResponse.successResponseWithData('no_data', null);
-            }
+						if (!rs.success) {
+							return apiResponse.successResponseWithData('no_data', null);
+						}
 
-            return apiResponse.successResponseWithData('success', rs.data);
-          } else {
-            return apiResponse.successResponseWithData('no_data', null);
-          }
-        } catch (err) {
-          console.log('errrxx', err);
-          return apiResponse.ErrorResponse('Cannot get order');
-        }
-      },
-    },
-    getAllByShipper: {
-      async handler(ctx) {
-        try {
-          if (!ctx.meta.user || !ctx.meta.user.user_id) {
-            return 'Unauthorized';
-          }
-          const payload = JSON.parse(Object.keys(ctx.params)[0]);
+						return apiResponse.successResponseWithData('success', rs.data);
+					} else {
+						return apiResponse.successResponseWithData('no_data', null);
+					}
+				} catch (err) {
+					console.log('errrxx', err);
+					return apiResponse.ErrorResponse('Cannot get order');
+				}
+			}
+		},
+		getAllByShipper: {
+			async handler(ctx) {
+				try {
+					if (!ctx.meta.user || !ctx.meta.user.user_id) {
+						return 'Unauthorized';
+					}
+					const payload = JSON.parse(Object.keys(ctx.params)[0]);
 
-          const { page, size, status, order_id, from, to } = payload;
-          const shipper_id = ctx.meta.user.user_id;
-          const queries = {
-            status: status,
-            shipper_id: new ObjectID(shipper_id),
-          };
+					const { page, size, status, order_id, from, to } = payload;
+					const shipper_id = ctx.meta.user.user_id;
+					const queries = {
+						status: status,
+						shipper_id: new ObjectID(shipper_id)
+					};
 
-          Object.keys(queries).forEach((x) => {
-            if (
-              queries[x] === null ||
-              queries[x] === undefined ||
-              queries[x] == 'all'
-            ) {
-              delete queries[x];
-            }
-          });
+					Object.keys(queries).forEach((x) => {
+						if (queries[x] === null || queries[x] === undefined || queries[x] == 'all') {
+							delete queries[x];
+						}
+					});
 
-          let data = await this.adapter.find({
-            query: queries,
-          });
+					let data = await this.adapter.find({
+						query: queries
+					});
 
-          const fromDate = from
-            ? new Date(
-                format(
-                  typeof from === 'string' ? new Date(from) : from,
-                  'yyyy-MM-dd'
-                )
-              )
-            : null;
-          const toDate = to
-            ? new Date(
-                format(typeof to === 'string' ? new Date(to) : to, 'yyyy-MM-dd')
-              )
-            : null;
+					const fromDate = from
+						? new Date(format(typeof from === 'string' ? new Date(from) : from, 'yyyy-MM-dd'))
+						: null;
+					const toDate = to
+						? new Date(format(typeof to === 'string' ? new Date(to) : to, 'yyyy-MM-dd'))
+						: null;
 
-          data = data.filter((x) => {
-            return (
-              `${x._id}`.includes(order_id ?? '') &&
-              (status !== 'all' || ['3', '-3', '-2'].includes(x.status)) &&
-              (!fromDate ||
-                new Date(format(x.created_at, 'yyyy-MM-dd')) >= fromDate) &&
-              (!toDate ||
-                new Date(format(x.created_at, 'yyyy-MM-dd')) <= toDate)
-            );
-          });
-          const { response, totalItems } = getPagingData(data, page, size);
-          return apiResponse.successResponseWithPagingData(
-            'success',
-            response,
-            page,
-            totalItems
-          );
-        } catch (err) {
-          console.log('errrxx', err);
-          return apiResponse.ErrorResponse('Cannot get order');
-        }
-      },
-    },
-    getCountByShipperId: {
-      async handler(ctx) {
-        let params = {
-          query: {
-            shipper_id: new ObjectID(ctx.params.shipper_id),
-          },
-        };
+					data = data.filter((x) => {
+						return (
+							// `${x._id}`.includes(order_id ?? '') &&
+							(status !== 'all' || [ '3', '-3', '-2' ].includes(x.status)) &&
+							(!fromDate || new Date(format(x.created_at, 'yyyy-MM-dd')) >= fromDate) &&
+							(!toDate || new Date(format(x.created_at, 'yyyy-MM-dd')) <= toDate)
+						);
+					});
+					const { response, totalItems } = getPagingData(data, page, size);
+					return apiResponse.successResponseWithPagingData('success', response, page, totalItems);
+				} catch (err) {
+					console.log('errrxx', err);
+					return apiResponse.ErrorResponse('Cannot get order');
+				}
+			}
+		},
+		getCountByShipperId: {
+			async handler(ctx) {
+				let params = {
+					query: {
+						shipper_id: new ObjectID(ctx.params.shipper_id)
+					}
+				};
 
-        const res = await this.adapter.count(params);
+				const res = await this.adapter.count(params);
 
-        return res;
-      },
-    },
-    getCountByCustomerId: {
-      async handler(ctx) {
-        let params = {
-          query: {
-            customer_id: new ObjectID(ctx.params.customer_id),
-          },
-        };
+				return res;
+			}
+		},
+		getCountByCustomerId: {
+			async handler(ctx) {
+				let params = {
+					query: {
+						customer_id: new ObjectID(ctx.params.customer_id)
+					}
+				};
 
-        const res = await this.adapter.count(params);
+				const res = await this.adapter.count(params);
 
-        return res;
-      },
-    },
-    updateStatus: {
-      async handler(ctx) {
-        try {
-          if (!ctx.meta.user) {
-            return 'Unauthorized';
-          }
-          const payload = JSON.parse(Object.keys(ctx.params)[0]);
+				return res;
+			}
+		},
+		updateStatus: {
+			async handler(ctx) {
+				try {
+					if (!ctx.meta.user) {
+						return 'Unauthorized';
+					}
+					const payload = JSON.parse(Object.keys(ctx.params)[0]);
 
-          const { order_id, status } = payload;
+					const { order_id, status } = payload;
 
-          const { role, user_id } = ctx.meta.user;
+					const { role, user_id } = ctx.meta.user;
 
-          const order = await this.getById(new ObjectID(order_id));
+					const order = await this.getById(new ObjectID(order_id));
 
-          if (!order) {
-            return apiResponse.badRequestResponse(res, 'Order not exists');
-          }
+					if (!order) {
+						return apiResponse.badRequestResponse(res, 'Order not exists');
+					}
 
-          switch (role) {
-            case USER_ROLE_SHIPPER:
-              if (!order.shipper_id.equals(user_id)) {
-                return apiResponse.forbiddenResponse();
-              }
-            case USER_ROLE_SHOP:
+					switch (role) {
+						case USER_ROLE_SHIPPER:
+							if (!order.shipper_id.equals(user_id)) {
+								return apiResponse.forbiddenResponse();
+							}
+						case USER_ROLE_SHOP:
 							if (!order.shop_id.equals(user_id)) {
 								return apiResponse.forbiddenResponse();
 							}
-          }
+					}
 
-          const result = await this._update(new ObjectID(order_id), {
-            ...order,
-            status: status,
-          });
+					const result = await this._update(new ObjectID(order_id), {
+						...order,
+						status: status
+					});
 
-          if (!result) {
-            return apiResponse.ErrorResponse('Update failed');
-          }
-          return apiResponse.successResponse('Success');
-        } catch (err) {
-          console.log('errrxx', err);
-          return apiResponse.ErrorResponse('Cannot update order');
-        }
-      },
-    },
+					if (!result) {
+						return apiResponse.ErrorResponse('Update failed');
+					}
+					return apiResponse.successResponse('Success');
+				} catch (err) {
+					console.log('errrxx', err);
+					return apiResponse.ErrorResponse('Cannot update order');
+				}
+			}
+		},
 
-    getNewOrderByShipper: {
-      async handler(ctx) {
-        try {
-          if (!ctx.meta.user || !ctx.meta.user.user_id) {
-            return 'Unauthorized';
-          }
-          const shipper_id = ctx.meta.user.user_id;
-          const queries = {
-            status: '1',
-            shipper_id: new ObjectID(shipper_id),
-          };
+		getNewOrderByShipper: {
+			async handler(ctx) {
+				try {
+					if (!ctx.meta.user || !ctx.meta.user.user_id) {
+						return 'Unauthorized';
+					}
+					const shipper_id = ctx.meta.user.user_id;
+					const queries = {
+						status: '1',
+						shipper_id: new ObjectID(shipper_id)
+					};
 
-          Object.keys(queries).forEach((x) => {
-            if (
-              queries[x] === null ||
-              queries[x] === undefined ||
-              queries[x] == 'all'
-            ) {
-              delete queries[x];
-            }
-          });
+					Object.keys(queries).forEach((x) => {
+						if (queries[x] === null || queries[x] === undefined || queries[x] == 'all') {
+							delete queries[x];
+						}
+					});
 
-          let data = await this.adapter.find({
-            query: queries,
-          });
-          console.log('zxc', data);
-          if (data && data.length > 0) {
-            return apiResponse.successResponseWithData('success', data[0]);
-          } else {
-            return apiResponse.successResponseWithData('no_data', null);
-          }
-        } catch (err) {
-          console.log('errrxx', err);
-          return apiResponse.ErrorResponse('Cannot get order');
-        }
-      },
-    },
+					let data = await this.adapter.find({
+						query: queries
+					});
+					console.log('zxc', data);
+					if (data && data.length > 0) {
+						return apiResponse.successResponseWithData('success', data[0]);
+					} else {
+						return apiResponse.successResponseWithData('no_data', null);
+					}
+				} catch (err) {
+					console.log('errrxx', err);
+					return apiResponse.ErrorResponse('Cannot get order');
+				}
+			}
+		},
 
-    getAllByShop: {
+		getAllByShop: {
 			params: {
 				limit: { type: 'number', optional: true, convert: true },
 				offset: { type: 'number', optional: true, convert: true }
@@ -457,114 +429,109 @@ module.exports = {
 			}
 		},
 
-    createOrder: {
-      async handler(ctx) {
-        try {
-          if (!ctx.meta.user) {
-            return new apiResponse.unauthorizedResponse('Unauthorized');
-          }
+		createOrder: {
+			async handler(ctx) {
+				try {
+					if (!ctx.meta.user) {
+						return new apiResponse.unauthorizedResponse('Unauthorized');
+					}
 
-          const { user_id } = ctx.meta.user;
-          const key = Object.keys(ctx.params)[0];
-          const value = '[' + Object.keys(ctx.params[key])[0] + ']';
+					const { user_id } = ctx.meta.user;
+					const key = Object.keys(ctx.params)[0];
+					const value = '[' + Object.keys(ctx.params[key])[0] + ']';
 
-          const items = JSON.parse(value);
+					const items = JSON.parse(value);
 
-          const products = [];
+					const products = [];
 
-          const { data: payment } = await ctx.call('payment.getByPaymentID', {
-            payment_id: '62555abfe078c36742dcd866',
-          });
+					const { data: payment } = await ctx.call('payment.getByPaymentID', {
+						payment_id: '62555abfe078c36742dcd866'
+					});
 
-          for (const item of items) {
-            console.log(item);
-            const data = await ctx.call('products.get', {
-              id: item.id,
-            });
-            const { data: product } = data;
+					for (const item of items) {
+						console.log(item);
+						const data = await ctx.call('products.get', {
+							id: item.id
+						});
+						const { data: product } = data;
 
-            if (!product)
-              return apiResponse.notFoundResponse(
-                {},
-                `Product ${item.id} not found`
-              );
-            if (item.quantity > product.inventory) {
-              return apiResponse.badRequestResponse(
-                `Insufficient inventory for ${item.id} - ${product.name}`
-              );
-            }
-            products.push({ ...product, quantity: item.quantity });
-          }
-          const orders = {};
+						if (!product) return apiResponse.notFoundResponse({}, `Product ${item.id} not found`);
+						if (item.quantity > product.inventory) {
+							return apiResponse.badRequestResponse(
+								`Insufficient inventory for ${item.id} - ${product.name}`
+							);
+						}
+						products.push({ ...product, quantity: item.quantity });
+					}
+					const orders = {};
 
-          for (const product of products) {
-            console.log(product);
-            if (!orders[product.shop_id]) {
-              orders[product.shop_id] = {
-                created_at: new Date(),
-                updated_at: new Date(),
-                _id: new ObjectID(),
-                product: [],
-                customer_id: user_id,
-                shipper_id: null,
-                total_cost: 0,
-                total_product: 0,
-                payment: {
-                  status: false,
-                  _id: payment._id,
-                },
-                shop_id: product.shop_id,
-              };
-            }
+					for (const product of products) {
+						console.log(product);
+						if (!orders[product.shop_id]) {
+							orders[product.shop_id] = {
+								created_at: new Date(),
+								updated_at: new Date(),
+								_id: new ObjectID(),
+								product: [],
+								customer_id: user_id,
+								shipper_id: null,
+								total_cost: 0,
+								total_product: 0,
+								payment: {
+									status: false,
+									_id: payment._id
+								},
+								shop_id: product.shop_id
+							};
+						}
 
-            orders[product.shop_id].product.push({
-              product_id: product._id,
-              quantity: product.quantity,
-            });
-            orders[product.shop_id].total_cost +=
-              product.unit_price * product.quantity;
-            orders[product.shop_id].total_product += product.quantity;
-          }
+						orders[product.shop_id].product.push({
+							product_id: product._id,
+							quantity: product.quantity
+						});
+						orders[product.shop_id].total_cost += product.unit_price * product.quantity;
+						orders[product.shop_id].total_product += product.quantity;
+					}
 
-          let ordersArr = Object.values(orders);
-          console.log(ordersArr);
+					let ordersArr = Object.values(orders);
+					console.log(ordersArr);
 
-          let result = await this.adapter.insertMany(ordersArr);
+					let result = await this.adapter.insertMany(ordersArr);
 
-          if (!result) {
-            return apiResponse.ErrorResponse('Created Failed');
-          }
+					if (!result) {
+						return apiResponse.ErrorResponse('Created Failed');
+					}
 
-          return apiResponse.successResponseWithData('Success', result);
-        } catch (err) {
-          return apiResponse.ErrorResponse(err + '');
-        }
-      },
-    },
-  },
+					return apiResponse.successResponseWithData('Success', result);
+				} catch (err) {
+					return apiResponse.ErrorResponse(err + '');
+				}
+			}
+		}
+	},
 
-  /**
+	/**
    * Events
    */
-  events: {},
+	events: {},
 
-  /**
+	/**
    * Methods
    */
-  methods: {},
+	methods: {},
 
-  /**
+	/**
    * Service created lifecycle event handler
    */
-  created() {},
+	created() {},
 
-  /**
+	/**
    * Service started lifecycle event handler
    */
-  started() {},
+	started() {},
 
-  /**
+	/**
    * Service stopped lifecycle event handler
    */
-  stopped() {},
+	stopped() {}
 };
